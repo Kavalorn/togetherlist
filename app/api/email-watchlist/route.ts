@@ -1,17 +1,15 @@
-// app/api/watchlist/route.ts (повна заміна)
+// app/api/email-watchlist/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase';
 import { db } from '@/lib/db';
 import { emailWatchlistTable } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 
 // GET - Отримання списку перегляду для поточного користувача
 export async function GET(request: NextRequest) {
   try {
-    // Створюємо серверний клієнт Supabase
     const supabase = createSupabaseServerClient();
     
-    // Отримуємо токен з заголовка запиту
     const authHeader = request.headers.get('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
@@ -22,7 +20,6 @@ export async function GET(request: NextRequest) {
     
     const token = authHeader.replace('Bearer ', '');
     
-    // Верифікуємо токен та отримуємо користувача
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     
     if (authError || !user || !user.email) {
@@ -32,7 +29,7 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    // Отримуємо список перегляду з бази даних за email
+    // Отримуємо список перегляду з бази даних для цього користувача
     const watchlist = await db.select().from(emailWatchlistTable)
       .where(eq(emailWatchlistTable.userEmail, user.email.toLowerCase()))
       .orderBy(emailWatchlistTable.createdAt);
@@ -62,10 +59,8 @@ export async function GET(request: NextRequest) {
 // POST - Додавання фільму до списку перегляду
 export async function POST(request: NextRequest) {
   try {
-    // Створюємо серверний клієнт Supabase
     const supabase = createSupabaseServerClient();
     
-    // Отримуємо токен з заголовка запиту
     const authHeader = request.headers.get('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
@@ -76,7 +71,6 @@ export async function POST(request: NextRequest) {
     
     const token = authHeader.replace('Bearer ', '');
     
-    // Верифікуємо токен та отримуємо користувача
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     
     if (authError || !user || !user.email) {

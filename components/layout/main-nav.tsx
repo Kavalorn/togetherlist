@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Search, BookmarkIcon, Film } from 'lucide-react';
+import { Search, BookmarkIcon, Film, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
@@ -65,6 +65,18 @@ export function MainNav() {
             <BookmarkIcon className="h-4 w-4 mr-2" />
             Список перегляду
           </Link>
+          {user && (
+            <Link
+              href="/friends"
+              className={cn(
+                "text-sm font-medium transition-colors hover:text-primary flex items-center px-2 py-1 rounded-md",
+                pathname.startsWith("/friends") ? "text-primary" : "text-muted-foreground"
+              )}
+            >
+              <Users className="h-4 w-4 mr-2" />
+              Друзі
+            </Link>
+          )}
         </nav>
         
         <div className="ml-auto flex items-center space-x-4">
@@ -85,6 +97,12 @@ export function MainNav() {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/friends" className="cursor-pointer">
+                    <Users className="h-4 w-4 mr-2" />
+                    Мої друзі
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   className="cursor-pointer"
                   onClick={() => logout()}

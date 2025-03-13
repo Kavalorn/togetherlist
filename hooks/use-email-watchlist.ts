@@ -1,4 +1,4 @@
-// hooks/use-watchlist.ts
+// hooks/use-email-watchlist.ts
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -9,7 +9,7 @@ import { useAuthStore } from '@/store/auth-store';
 const fetchWatchlist = async (token: string | null = null): Promise<any[]> => {
   if (!token) return [];
   
-  const response = await fetch('/api/watchlist', {
+  const response = await fetch('/api/email-watchlist', {
     headers: {
       'Authorization': `Bearer ${token}`
     }
@@ -25,7 +25,7 @@ const fetchWatchlist = async (token: string | null = null): Promise<any[]> => {
 const addToWatchlist = async (movie: MovieDetails, token: string | null = null) => {
   if (!token) throw new Error('Not authenticated');
   
-  const response = await fetch('/api/watchlist', {
+  const response = await fetch('/api/email-watchlist', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -51,7 +51,7 @@ const addToWatchlist = async (movie: MovieDetails, token: string | null = null) 
 const removeFromWatchlist = async (movieId: number, token: string | null = null) => {
   if (!token) throw new Error('Not authenticated');
   
-  const response = await fetch(`/api/watchlist/${movieId}`, {
+  const response = await fetch(`/api/email-watchlist/${movieId}`, {
     method: 'DELETE',
     headers: {
       'Authorization': `Bearer ${token}`
@@ -66,14 +66,14 @@ const removeFromWatchlist = async (movieId: number, token: string | null = null)
 };
 
 // Хук для роботи зі списком перегляду
-export function useWatchlist() {
+export function useEmailWatchlist() {
   const queryClient = useQueryClient();
   const token = useAuthStore(state => state.session?.access_token);
   const isAuthenticated = useAuthStore(state => !!state.session);
   
   // Запит на отримання списку перегляду
   const watchlistQuery = useQuery({
-    queryKey: ['watchlist'],
+    queryKey: ['email-watchlist'],
     queryFn: () => fetchWatchlist(token),
     enabled: isAuthenticated,
   });
@@ -83,7 +83,7 @@ export function useWatchlist() {
     mutationFn: (movie: MovieDetails) => addToWatchlist(movie, token),
     onSuccess: () => {
       // Інвалідація кешу після успішного додавання
-      queryClient.invalidateQueries({ queryKey: ['watchlist'] });
+      queryClient.invalidateQueries({ queryKey: ['email-watchlist'] });
     },
   });
   
@@ -92,7 +92,7 @@ export function useWatchlist() {
     mutationFn: (movieId: number) => removeFromWatchlist(movieId, token),
     onSuccess: () => {
       // Інвалідація кешу після успішного видалення
-      queryClient.invalidateQueries({ queryKey: ['watchlist'] });
+      queryClient.invalidateQueries({ queryKey: ['email-watchlist'] });
     },
   });
   
@@ -100,7 +100,6 @@ export function useWatchlist() {
   const isInWatchlist = (movieId: number) => {
     if (!watchlistQuery.data) return false;
     return watchlistQuery.data.some(movie => {
-      // Перевірка різних можливих імен полів ID
       const watchlistId = movie.movie_id || movie.id;
       return watchlistId === movieId;
     });

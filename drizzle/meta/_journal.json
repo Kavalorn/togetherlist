@@ -8,6 +8,34 @@
       "when": 1741824488488,
       "tag": "0000_shiny_senator_kelly",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1741879218249,
+      "tag": "0001_stormy_odin",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1741880200690,
+      "tag": "0002_wet_sheva_callister",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1741880980316,
+      "tag": "0003_secret_songbird",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1741895490709,
+      "tag": "0004_goofy_sandman",
+      "breakpoints": true
     }
   ]
 }

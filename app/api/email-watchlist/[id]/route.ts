@@ -1,4 +1,4 @@
-// app/api/watchlist/[id]/route.ts (повна заміна)
+// app/api/email-watchlist/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase';
 import { db } from '@/lib/db';
@@ -11,10 +11,8 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Створюємо серверний клієнт Supabase
     const supabase = createSupabaseServerClient();
     
-    // Отримуємо токен з заголовка запиту
     const authHeader = request.headers.get('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
@@ -25,7 +23,6 @@ export async function DELETE(
     
     const token = authHeader.replace('Bearer ', '');
     
-    // Верифікуємо токен та отримуємо користувача
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     
     if (authError || !user || !user.email) {
