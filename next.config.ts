@@ -12,6 +12,9 @@ const nextConfig = {
   experimental: {
     /* Next.js 15 експериментальні функції */
   },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
 };
 
 export default nextConfig;

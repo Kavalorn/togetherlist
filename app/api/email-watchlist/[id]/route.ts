@@ -5,11 +5,14 @@ import { db } from '@/lib/db';
 import { emailWatchlistTable } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 
+type RouteParams = {
+  params: {
+    id: string;
+  };
+};
+
 // DELETE - Видалення фільму зі списку перегляду
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest, context: RouteParams) {
   try {
     const supabase = createSupabaseServerClient();
     
@@ -32,7 +35,7 @@ export async function DELETE(
       );
     }
 
-    const id = params.id;
+    const { id } = context.params;
     
     const movieId = parseInt(id, 10);
     
