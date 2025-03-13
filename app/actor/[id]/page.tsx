@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { format } from 'date-fns';
@@ -14,6 +14,19 @@ import { MovieCard } from '@/components/movie/movie-card';
 import { ArrowLeft, CalendarIcon, Clock, Loader2, MapPin } from 'lucide-react';
 
 export default function ActorPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-col items-center justify-center h-[50vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+        <p className="text-muted-foreground">Завантаження...</p>
+      </div>
+    }>
+      <ActorContent />
+    </Suspense>
+  );
+}
+
+function ActorContent() {
   const params = useParams();
   const router = useRouter();
   const personId = params.id ? parseInt(params.id as string, 10) : null;

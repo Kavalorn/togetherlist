@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useAuthStore } from '@/store/auth-store';
@@ -12,6 +12,19 @@ import { MovieCard } from '@/components/movie/movie-card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function FriendWatchlistPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-col items-center justify-center h-[50vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+        <p className="text-muted-foreground">Завантаження...</p>
+      </div>
+    }>
+      <FriendWatchlistContent />
+    </Suspense>
+  );
+}
+
+function FriendWatchlistContent() {
   const router = useRouter();
   const params = useParams();
   const friendEmail = params.id as string;

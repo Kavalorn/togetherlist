@@ -9,11 +9,12 @@ const nextConfig = {
       },
     ],
   },
+  typescript: {
+    // Ігноруємо помилки типів під час збірки
+    ignoreBuildErrors: true,
+  },
   experimental: {
     /* Next.js 15 експериментальні функції */
-  },
-  typescript: {
-    ignoreBuildErrors: true,
   },
 };
 

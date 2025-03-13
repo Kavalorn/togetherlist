@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,22 @@ import { useSearchMovies, usePopularMovies } from '@/hooks/use-movies';
 import { useAuthStore } from '@/store/auth-store';
 import { MoviesList } from '@/components/movie/movies-list';
 
+// Головний компонент сторінки, обгорнутий у Suspense
 export default function HomePage() {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-col items-center justify-center h-[50vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+        <p className="text-muted-foreground">Завантаження...</p>
+      </div>
+    }>
+      <HomePageContent />
+    </Suspense>
+  );
+}
+
+// Компонент сторінки з усією функціональністю
+function HomePageContent() {
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get('q') || '';
   const [searchQuery, setSearchQuery] = useState(initialQuery);
@@ -46,8 +61,6 @@ export default function HomePage() {
   
   return (
     <div className="space-y-8">
-
-      
       <Tabs defaultValue="search" value={activeTab} onValueChange={(value) => setActiveTab(value as 'search' | 'popular')}>
         <div className="flex justify-between items-center mb-6">
           <TabsList className='rounded-xs'>
@@ -63,7 +76,7 @@ export default function HomePage() {
         </div>
         
         <TabsContent value="search" className="space-y-4">
-        <form onSubmit={handleSearch} className="relative">
+          <form onSubmit={handleSearch} className="relative">
             <Input
               type="search"
               placeholder="Пошук фільмів..."

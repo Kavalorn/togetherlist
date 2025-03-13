@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useAuthStore } from '@/store/auth-store';
@@ -38,6 +38,19 @@ import {
 import { toast } from 'sonner';
 
 export default function FriendsPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-col items-center justify-center h-[50vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+        <p className="text-muted-foreground">Завантаження...</p>
+      </div>
+    }>
+      <FriendsContent />
+    </Suspense>
+  );
+}
+
+function FriendsContent() {
   const router = useRouter();
   const { user, isLoading: isAuthLoading } = useAuthStore();
   const [activeTab, setActiveTab] = useState<'accepted' | 'pending' | 'sent'>('accepted');
@@ -448,101 +461,101 @@ export default function FriendsPage() {
                   </CardContent>
                   <CardFooter>
                     <Button 
-                      variant="outline" 
-                      className="w-full"
-                      onClick={() => handleCancelRequest(request.id)}
-                      disabled={isRemovingFriend}
-                    >
-                      {isRemovingFriend ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <X className="mr-2 h-4 w-4" />
-                      )}
-                      Скасувати запит
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-12 space-y-4">
-              <Send className="h-16 w-16 text-muted-foreground" />
-              <h2 className="text-xl font-semibold">Ви не надіслали жодного запиту</h2>
-              <p className="text-muted-foreground max-w-md text-center">
-                Надішліть запити друзям, щоб почати ділитися списками переглядів фільмів
-              </p>
-              <Button onClick={() => setAddFriendDialogOpen(true)} variant="default" className="mt-4">
-                <UserPlus className="mr-2 h-4 w-4" />
-                Додати друга
-              </Button>
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
-      
-      <Dialog open={addFriendDialogOpen} onOpenChange={setAddFriendDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Додати друга</DialogTitle>
-            <DialogDescription>
-              Введіть електронну пошту користувача, якого хочете додати в друзі
-            </DialogDescription>
-          </DialogHeader>
-          
-          <form onSubmit={handleAddFriend}>
-            {addFriendError && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertDescription>
-                  <AlertCircle className="h-4 w-4 mr-2 inline-block" />
-                  {addFriendError}
-                </AlertDescription>
-              </Alert>
-            )}
-            
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <div className="col-span-4">
-                  <Input
-                    id="friendEmail"
-                    placeholder="email@example.com"
-                    value={friendEmail}
-                    onChange={(e) => setFriendEmail(e.target.value)}
-                    required
-                    type="email"
-                    className="w-full"
-                  />
-                </div>
-              </div>
-            </div>
-            
-            <DialogFooter>
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => setAddFriendDialogOpen(false)}
-              >
-                Скасувати
-              </Button>
-              <Button 
-                type="submit" 
-                disabled={isAddingFriend || !friendEmail}
-              >
-                {isAddingFriend ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Відправка...
-                  </>
-                ) : (
-                  <>
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    Надіслати запит
-                  </>
-                )}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
+variant="outline" 
+className="w-full"
+onClick={() => handleCancelRequest(request.id)}
+disabled={isRemovingFriend}
+>
+{isRemovingFriend ? (
+  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+) : (
+  <X className="mr-2 h-4 w-4" />
+)}
+Скасувати запит
+</Button>
+</CardFooter>
+</Card>
+))}
+</div>
+) : (
+<div className="flex flex-col items-center justify-center py-12 space-y-4">
+<Send className="h-16 w-16 text-muted-foreground" />
+<h2 className="text-xl font-semibold">Ви не надіслали жодного запиту</h2>
+<p className="text-muted-foreground max-w-md text-center">
+Надішліть запити друзям, щоб почати ділитися списками переглядів фільмів
+</p>
+<Button onClick={() => setAddFriendDialogOpen(true)} variant="default" className="mt-4">
+<UserPlus className="mr-2 h-4 w-4" />
+Додати друга
+</Button>
+</div>
+)}
+</TabsContent>
+</Tabs>
+
+<Dialog open={addFriendDialogOpen} onOpenChange={setAddFriendDialogOpen}>
+<DialogContent className="sm:max-w-[425px]">
+<DialogHeader>
+<DialogTitle>Додати друга</DialogTitle>
+<DialogDescription>
+Введіть електронну пошту користувача, якого хочете додати в друзі
+</DialogDescription>
+</DialogHeader>
+
+<form onSubmit={handleAddFriend}>
+{addFriendError && (
+<Alert variant="destructive" className="mb-4">
+<AlertDescription>
+<AlertCircle className="h-4 w-4 mr-2 inline-block" />
+{addFriendError}
+</AlertDescription>
+</Alert>
+)}
+
+<div className="grid gap-4 py-4">
+<div className="grid grid-cols-4 items-center gap-4">
+<div className="col-span-4">
+<Input
+id="friendEmail"
+placeholder="email@example.com"
+value={friendEmail}
+onChange={(e) => setFriendEmail(e.target.value)}
+required
+type="email"
+className="w-full"
+/>
+</div>
+</div>
+</div>
+
+<DialogFooter>
+<Button 
+type="button" 
+variant="outline" 
+onClick={() => setAddFriendDialogOpen(false)}
+>
+Скасувати
+</Button>
+<Button 
+type="submit" 
+disabled={isAddingFriend || !friendEmail}
+>
+{isAddingFriend ? (
+<>
+<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+Відправка...
+</>
+) : (
+<>
+<UserPlus className="mr-2 h-4 w-4" />
+Надіслати запит
+</>
+)}
+</Button>
+</DialogFooter>
+</form>
+</DialogContent>
+</Dialog>
+</div>
+);
 }

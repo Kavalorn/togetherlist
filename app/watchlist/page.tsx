@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { useWatchlist } from '@/hooks/use-watchlist';
 import { useAuthStore } from '@/store/auth-store';
@@ -10,6 +10,19 @@ import { BookmarkX, Loader2, Search } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 
 export default function WatchlistPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-col items-center justify-center h-[50vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+        <p className="text-muted-foreground">Завантаження...</p>
+      </div>
+    }>
+      <WatchlistContent />
+    </Suspense>
+  );
+}
+
+function WatchlistContent() {
   const { watchlist, isLoading, refetch } = useWatchlist();
   const { user, isLoading: isAuthLoading } = useAuthStore();
   const router = useRouter();
