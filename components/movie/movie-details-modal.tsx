@@ -17,6 +17,8 @@ export function MovieDetailsModal() {
   // Отримання додаткових даних про фільм (актори, зображення)
   const { data: creditsData, isLoading: isLoadingCredits } = useMovieCredits(selectedMovie?.id || null);
   const { data: imagesData, isLoading: isLoadingImages } = useMovieImages(selectedMovie?.id || null);
+  console.log('selectedMovie: ', selectedMovie);
+  console.log('imagesData: ', imagesData);
 
   // Якщо фільм не вибрано, не відображаємо модальне вікно
   if (!selectedMovie) {

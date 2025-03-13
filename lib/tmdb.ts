@@ -97,16 +97,16 @@ export interface PersonMovieCredits {
   crew: CrewMovie[]; // Використовуємо CrewMovie замість Movie & {...}
 }
 
+const language = {
+  language: 'uk-UA'
+}
+
 // Функція для здійснення запитів до TMDB API
 const fetchFromTMDB = async <T>(endpoint: string, params: Record<string, string> = {}): Promise<T> => {
   const url = new URL(`${TMDB_BASE_URL}${endpoint}`);
-
-  const defaultParams = {
-    language: 'uk-UA'
-  }
   
   // Додавання параметрів до URL
-  Object.entries({...defaultParams, ...params}).forEach(([key, value]) => {
+  Object.entries({...params}).forEach(([key, value]) => {
     url.searchParams.append(key, value);
   });
 
@@ -131,12 +131,12 @@ export const tmdbApi = {
   searchMovies: (query: string, page = 1) =>
     fetchFromTMDB<{ results: Movie[]; total_results: number; total_pages: number }>(
       '/search/movie',
-      { query, page: page.toString() }
+      { query, page: page.toString(), ...language }
     ),
 
   // Отримання деталей фільму
   getMovieDetails: (id: number) =>
-    fetchFromTMDB<MovieDetails>(`/movie/${id}`),
+    fetchFromTMDB<MovieDetails>(`/movie/${id}`, {...language}),
 
   // Отримання акторського складу фільму
   getMovieCredits: (id: number) =>
@@ -148,7 +148,7 @@ export const tmdbApi = {
 
   // Отримання інформації про актора
   getPersonDetails: (id: number) =>
-    fetchFromTMDB<PersonDetails>(`/person/${id}`),
+    fetchFromTMDB<PersonDetails>(`/person/${id}`, {...language}),
 
   // Отримання фільмографії актора
   getPersonMovieCredits: (id: number) =>
@@ -158,13 +158,13 @@ export const tmdbApi = {
   getPopularMovies: (page = 1) =>
     fetchFromTMDB<{ results: Movie[]; total_results: number; total_pages: number }>(
       '/movie/popular',
-      { page: page.toString() }
+      { page: page.toString(), ...language }
     ),
 
   // Отримання фільмів у прокаті
   getNowPlayingMovies: (page = 1) =>
     fetchFromTMDB<{ results: Movie[]; total_results: number; total_pages: number }>(
       '/movie/now_playing',
-      { page: page.toString() }
+      { page: page.toString(), ...language }
     ),
 };
