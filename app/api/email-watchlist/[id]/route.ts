@@ -32,7 +32,7 @@ export async function DELETE(
       );
     }
 
-    const { id } = params;
+    const id = params.id;
     
     const movieId = parseInt(id, 10);
     
