@@ -125,10 +125,35 @@ export const useAuthStore = create<AuthState>()(
           set({ isLoading: true, error: null });
           const supabase = createSupabaseClient();
           
-          const { error } = await supabase.auth.signOut();
+          // Перевіряємо, чи є активна сесія перед виходом
+          const currentSession = get().session;
           
-          if (error) throw error;
+          if (!currentSession) {
+            // Якщо сесії немає, просто очищаємо стан без звернення до API
+            set({ 
+              user: null, 
+              session: null,
+              isLoading: false 
+            });
+            return;
+          }
           
+          try {
+            const { error } = await supabase.auth.signOut();
+            
+            if (error) throw error;
+          } catch (error: any) {
+            console.error('Logout API error:', error);
+            // Якщо помилка пов'язана з відсутньою сесією, 
+            // продовжуємо і просто очищаємо стан
+            if (error.message.includes('session')) {
+              console.log('Session not found, clearing state anyway');
+            } else {
+              throw error;
+            }
+          }
+          
+          // В будь-якому випадку чистимо стан
           set({ 
             user: null, 
             session: null,
