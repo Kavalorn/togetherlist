@@ -3,7 +3,6 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { format } from 'date-fns';
 import { useSpring, animated } from '@react-spring/web';
 import { useDrag } from '@use-gesture/react';
 import { Button } from '@/components/ui/button';
@@ -43,6 +42,12 @@ interface MovieFilters {
 
 // Ключ для збереження фільтрів в localStorage
 const FILTERS_STORAGE_KEY = 'movie-swiper-filters';
+
+// Функція для форматування дати
+function formatYear(dateString) {
+  if (!dateString) return '';
+  return new Date(dateString).getFullYear().toString();
+}
 
 export function MovieSwiper() {
   const [currentMovie, setCurrentMovie] = useState<Movie | null>(null);
@@ -367,7 +372,7 @@ export function MovieSwiper() {
           </Button>
         </div>
 
-        <div className="relative w-full max-w-md mx-auto px-0 pt-2 flex-1 flex flex-col h-full">
+        <div className="relative w-full max-w-md mx-auto px-4 pt-2 flex-1 flex flex-col h-full">
           <div 
             className="relative w-full flex-grow"
             style={{ height: `${calculateCardHeight()}px` }}
@@ -402,77 +407,80 @@ export function MovieSwiper() {
                     </div>
                   )}
                   
-                  {/* Градієнтне затемнення знизу для тексту */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent">
-                    {/* Індикатори свайпу */}
-                    {direction === 'right' && (
-                      <div className="absolute top-10 right-10 transform rotate-12 border-4 border-green-500 rounded-md px-4 py-2 bg-green-500/30">
-                        <span className="text-white text-xl font-bold">ПОДОБАЄТЬСЯ</span>
-                      </div>
-                    )}
-                    {direction === 'left' && (
-                      <div className="absolute top-10 left-10 transform -rotate-12 border-4 border-red-500 rounded-md px-4 py-2 bg-red-500/30">
-                        <span className="text-white text-xl font-bold">ПРОПУСТИТИ</span>
-                      </div>
-                    )}
-                  </div>
+                  {/* Індикатори свайпу */}
+                  {direction === 'right' && (
+                    <div className="absolute top-10 right-10 transform rotate-12 border-4 border-green-500 rounded-md px-4 py-2 bg-green-500/30">
+                      <span className="text-white text-xl font-bold">ПОДОБАЄТЬСЯ</span>
+                    </div>
+                  )}
+                  {direction === 'left' && (
+                    <div className="absolute top-10 left-10 transform -rotate-12 border-4 border-red-500 rounded-md px-4 py-2 bg-red-500/30">
+                      <span className="text-white text-xl font-bold">ПРОПУСТИТИ</span>
+                    </div>
+                  )}
                 </div>
 
-                {/* Інформація про фільм з темною підложкою */}
-                <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 bg-black/60 backdrop-blur-sm">
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center gap-2 mb-1">
-                      {currentMovie.vote_average && (
-                        <Badge variant="secondary" className="bg-yellow-500/80 text-white">
-                          <Star className="w-3 h-3 mr-1" />
-                          {currentMovie.vote_average.toFixed(1)}
-                        </Badge>
-                      )}
-                      {currentMovie.release_date && (
-                        <Badge variant="outline" className="bg-black/30 text-white border-none">
-                          {format(new Date(currentMovie.release_date), 'yyyy')}
-                        </Badge>
-                      )}
-                    </div>
-                    <h2 className="text-2xl font-bold text-white mb-2 drop-shadow-md line-clamp-2">
-                      {currentMovie.title}
-                    </h2>
-                    <p className="text-white/90 text-sm line-clamp-3 drop-shadow-md mb-2">
-                      {currentMovie.overview || 'Опис відсутній'}
-                    </p>
-                    
-                    {/* Кнопки дій */}
-                    <div className="flex justify-between pt-4">
-                      <Button
-                        onClick={handleButtonDislike}
-                        variant="destructive"
-                        size="icon"
-                        className="rounded-full h-14 w-14 shadow-lg"
-                      >
-                        <ThumbsDown className="h-6 w-6" />
-                      </Button>
+                {/* Інформація про фільм з більш прозорою підложкою і градієнтним переходом */}
+                <div className="absolute bottom-0 left-0 right-0">
+                  {/* Градієнтний перехід, який починається вище на постері */}
+                  <div className="absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t from-black/100 via-black/90 to-transparent"></div>
+                  
+                  {/* Контент з інформацією */}
+                  <div className="relative p-3 pb-4">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        {currentMovie.vote_average && (
+                          <Badge variant="secondary" className="bg-yellow-500/80 text-white">
+                            <Star className="w-3 h-3 mr-1" />
+                            {currentMovie.vote_average.toFixed(1)}
+                          </Badge>
+                        )}
+                        {currentMovie.release_date && (
+                          <Badge variant="outline" className="bg-black/20 text-white border-none">
+                            {formatYear(currentMovie.release_date)}
+                          </Badge>
+                        )}
+                      </div>
+                      <h2 className="text-xl sm:text-2xl font-bold text-white mb-1 drop-shadow-md line-clamp-2">
+                        {currentMovie.title}
+                      </h2>
+                      <p className="text-white/90 text-xs sm:text-sm line-clamp-2 drop-shadow-md mb-2">
+                        {currentMovie.overview || 'Опис відсутній'}
+                      </p>
                       
-                      <Button
-                        onClick={() => {
-                          if (movieDetails) {
-                            openMovieDetailsModal(movieDetails);
-                          }
-                        }}
-                        variant="outline"
-                        size="icon"
-                        className="rounded-full h-12 w-12 bg-white shadow-lg"
-                      >
-                        <Info className="h-5 w-5" />
-                      </Button>
-                      
-                      <Button
-                        onClick={handleButtonLike}
-                        variant="default"
-                        size="icon"
-                        className="rounded-full h-14 w-14 bg-green-500 hover:bg-green-600 shadow-lg"
-                      >
-                        <ThumbsUp className="h-6 w-6" />
-                      </Button>
+                      {/* Кнопки дій */}
+                      <div className="flex justify-between pt-2">
+                        <Button
+                          onClick={handleButtonDislike}
+                          variant="destructive"
+                          size="icon"
+                          className="rounded-full h-12 w-12 shadow-lg"
+                        >
+                          <ThumbsDown className="h-5 w-5" />
+                        </Button>
+                        
+                        <Button
+                          onClick={() => {
+                            if (movieDetails) {
+                              openMovieDetailsModal(movieDetails);
+                            }
+                          }}
+                          variant="secondary"
+                          size="icon"
+                          className="rounded-full h-10 w-10 bg-primary/90 text-primary-foreground shadow-lg"
+                        >
+                          <Info className="h-4 w-4" />
+                        </Button>
+                        
+                        <Button
+                          onClick={handleButtonLike}
+                          variant="default"
+                          size="icon"
+                          className="rounded-full h-12 w-12 bg-green-500 hover:bg-green-600 shadow-lg"
+                        >
+                          <ThumbsUp className="h-5 w-5" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
