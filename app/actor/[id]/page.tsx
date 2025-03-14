@@ -74,7 +74,7 @@ function ActorContent() {
   if (isPersonError) {
     return (
       <div className="space-y-6">
-        <Button variant="outline" onClick={() => router.back()}>
+        <Button variant="outline" onClick={() => router.back()} className="w-full sm:w-auto">
           <ArrowLeft className="mr-2 h-4 w-4" />
           Назад
         </Button>
@@ -91,7 +91,7 @@ function ActorContent() {
   if (!personDetails) {
     return (
       <div className="space-y-6">
-        <Button variant="outline" onClick={() => router.back()}>
+        <Button variant="outline" onClick={() => router.back()} className="w-full sm:w-auto">
           <ArrowLeft className="mr-2 h-4 w-4" />
           Назад
         </Button>
@@ -105,22 +105,22 @@ function ActorContent() {
   }
   
   return (
-    <div className="space-y-8">
-      <Button variant="outline" onClick={() => router.back()}>
+    <div className="space-y-6 sm:space-y-8">
+      <Button variant="outline" onClick={() => router.back()} className="w-full sm:w-auto">
         <ArrowLeft className="mr-2 h-4 w-4" />
         Назад
       </Button>
       
-      <div className="flex flex-col md:flex-row gap-8">
-        <div className="md:w-1/4">
-          <div className="relative aspect-[2/3] w-full max-w-xs mx-auto md:mx-0 rounded-lg overflow-hidden shadow-md border">
+      <div className="flex flex-col md:flex-row gap-6 sm:gap-8">
+        <div className="w-full md:w-1/4">
+          <div className="relative aspect-[2/3] w-full max-w-[200px] mx-auto md:mx-0 rounded-lg overflow-hidden shadow-md border">
             {personDetails.profile_path ? (
               <Image
                 src={`https://image.tmdb.org/t/p/w500${personDetails.profile_path}`}
                 alt={personDetails.name}
                 fill
                 className="object-cover"
-                sizes="(max-width: 768px) 100vw, 25vw"
+                sizes="(max-width: 768px) 200px, 25vw"
               />
             ) : (
               <div className="absolute inset-0 flex justify-center items-center bg-muted">
@@ -142,7 +142,7 @@ function ActorContent() {
             {personDetails.birthday && (
               <div>
                 <h3 className="text-sm font-medium text-muted-foreground">Дата народження</h3>
-                <p className="flex items-center gap-2">
+                <p className="flex items-center gap-2 flex-wrap">
                   <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                   {format(new Date(personDetails.birthday), 'dd MMMM yyyy')}
                   {actorAge !== null && (
@@ -176,12 +176,12 @@ function ActorContent() {
           </div>
         </div>
         
-        <div className="md:w-3/4">
-          <h1 className="text-3xl font-bold mb-2">{personDetails.name}</h1>
+        <div className="w-full md:w-3/4">
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2">{personDetails.name}</h1>
           
           {personDetails.biography ? (
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold mb-4">Біографія</h2>
+            <div className="mb-6 sm:mb-8">
+              <h2 className="text-lg sm:text-xl font-semibold mb-2 sm:mb-4">Біографія</h2>
               <p className="text-sm sm:text-base whitespace-pre-line">
                 {personDetails.biography}
               </p>
@@ -192,13 +192,13 @@ function ActorContent() {
           
           <Separator className="my-6" />
           
-          <h2 className="text-xl font-semibold mb-4">Фільмографія</h2>
+          <h2 className="text-lg sm:text-xl font-semibold mb-4">Фільмографія</h2>
           
           {isLoadingMovies ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
               {[...Array(8)].map((_, index) => (
                 <div key={index} className="space-y-2">
-                  <Skeleton className="h-40 w-full rounded-md" />
+                  <Skeleton className="h-36 sm:h-40 w-full rounded-md" />
                   <Skeleton className="h-4 w-3/4" />
                   <Skeleton className="h-3 w-1/2" />
                 </div>
@@ -206,20 +206,20 @@ function ActorContent() {
             </div>
           ) : (
             <Tabs defaultValue="cast">
-              <TabsList>
-                <TabsTrigger value="cast">
+              <TabsList className="w-full flex justify-start mb-4">
+                <TabsTrigger value="cast" className="flex-1 sm:flex-none">
                   Фільми ({sortedCastMovies.length})
                 </TabsTrigger>
                 {sortedCrewMovies.length > 0 && (
-                  <TabsTrigger value="crew">
+                  <TabsTrigger value="crew" className="flex-1 sm:flex-none">
                     Режисер/Сценарист ({sortedCrewMovies.length})
                   </TabsTrigger>
                 )}
               </TabsList>
               
-              <TabsContent value="cast" className="mt-6">
+              <TabsContent value="cast" className="mt-0">
                 {sortedCastMovies.length > 0 ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
                     {sortedCastMovies.map(movie => (
                       <MovieCard
                         key={movie.id}
@@ -236,8 +236,8 @@ function ActorContent() {
               </TabsContent>
               
               {sortedCrewMovies.length > 0 && (
-                <TabsContent value="crew" className="mt-6">
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                <TabsContent value="crew" className="mt-0">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
                     {sortedCrewMovies.map(movie => (
                       <div key={movie.id} className="relative">
                         <MovieCard

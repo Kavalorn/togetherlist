@@ -47,8 +47,9 @@ export default function FriendsPage() {
     }>
       <FriendsContent />
     </Suspense>
-  );
+  )
 }
+
 
 function FriendsContent() {
   const router = useRouter();
@@ -213,24 +214,27 @@ function FriendsContent() {
   // Якщо користувач не авторизований, показуємо повідомлення про необхідність входу
   if (!user) {
     return (
-      <div className="flex flex-col items-center justify-center h-[50vh]">
-        <h1 className="text-2xl font-bold mb-4">Авторизуйтесь для доступу до списку друзів</h1>
-        <p className="text-muted-foreground mb-6">Для використання цієї функції необхідно увійти в свій обліковий запис</p>
+      <div className="flex flex-col items-center justify-center h-[50vh] p-4">
+        <h1 className="text-xl sm:text-2xl font-bold mb-4 text-center">Авторизуйтесь для доступу до списку друзів</h1>
+        <p className="text-muted-foreground mb-6 text-center">Для використання цієї функції необхідно увійти в свій обліковий запис</p>
+        <Button onClick={() => router.push('/')} variant="default">
+          На головну
+        </Button>
       </div>
     );
   }
   
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Друзі</h1>
+          <h1 className="text-xl sm:text-2xl font-bold">Друзі</h1>
           <p className="text-muted-foreground">
             Додавайте друзів та діліться списками переглядів фільмів
           </p>
         </div>
         
-        <Button onClick={() => setAddFriendDialogOpen(true)} variant="default" className="ml-auto">
+        <Button onClick={() => setAddFriendDialogOpen(true)} variant="default" className="sm:ml-auto w-full sm:w-auto">
           <UserPlus className="mr-2 h-4 w-4" />
           Додати друга
         </Button>
@@ -239,12 +243,12 @@ function FriendsContent() {
       <Separator />
       
       <Tabs defaultValue="accepted" value={activeTab} onValueChange={(value) => setActiveTab(value as 'accepted' | 'pending' | 'sent')}>
-        <TabsList className="mb-6">
+        <TabsList className="w-full justify-center mb-6 overflow-x-auto">
           <TabsTrigger value="accepted" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
-            <span>Друзі</span>
+            <span className="whitespace-nowrap">Друзі</span>
             {acceptedFriends.length > 0 && (
-              <span className="ml-1 rounded-full bg-primary text-primary-foreground text-xs px-2 py-0.5">
+              <span className="ml-1 rounded-full bg-primary text-primary-foreground text-xs px-2 py-0.5 min-w-5 text-center">
                 {acceptedFriends.length}
               </span>
             )}
@@ -252,9 +256,9 @@ function FriendsContent() {
           
           <TabsTrigger value="pending" className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
-            <span>Запити</span>
+            <span className="whitespace-nowrap">Запити</span>
             {pendingFriends.length > 0 && (
-              <span className="ml-1 rounded-full bg-primary text-primary-foreground text-xs px-2 py-0.5">
+              <span className="ml-1 rounded-full bg-primary text-primary-foreground text-xs px-2 py-0.5 min-w-5 text-center">
                 {pendingFriends.length}
               </span>
             )}
@@ -262,9 +266,9 @@ function FriendsContent() {
           
           <TabsTrigger value="sent" className="flex items-center gap-2">
             <Send className="h-4 w-4" />
-            <span>Надіслані</span>
+            <span className="whitespace-nowrap">Надіслані</span>
             {sentFriends.length > 0 && (
-              <span className="ml-1 rounded-full bg-primary text-primary-foreground text-xs px-2 py-0.5">
+              <span className="ml-1 rounded-full bg-primary text-primary-foreground text-xs px-2 py-0.5 min-w-5 text-center">
                 {sentFriends.length}
               </span>
             )}
@@ -277,9 +281,9 @@ function FriendsContent() {
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : acceptedFriends.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
               {acceptedFriends.map((friend) => (
-                <Card key={friend.id} className="overflow-hidden">
+                <Card key={friend.id} className="overflow-hidden h-full">
                   <CardContent className="pt-6">
                     <div className="flex items-center gap-4">
                       <div className="relative h-16 w-16 rounded-full overflow-hidden bg-muted flex items-center justify-center">
@@ -306,10 +310,10 @@ function FriendsContent() {
                       </div>
                     </div>
                   </CardContent>
-                  <CardFooter className="flex gap-2 justify-between">
+                  <CardFooter className="flex flex-col sm:flex-row gap-2">
                     <Button
                       variant="default"
-                      className="flex-1"
+                      className="w-full sm:flex-1"
                       onClick={() => router.push(`/friends/${friend.friend?.id}`)}
                     >
                       <Film className="mr-2 h-4 w-4" />
@@ -317,7 +321,7 @@ function FriendsContent() {
                     </Button>
                     <Button 
                       variant="outline" 
-                      className="flex-1"
+                      className="w-full sm:flex-1"
                       onClick={() => handleRemoveFriend(friend.id)}
                       disabled={isRemovingFriend}
                     >
@@ -335,7 +339,7 @@ function FriendsContent() {
           ) : (
             <div className="flex flex-col items-center justify-center py-12 space-y-4">
               <Users className="h-16 w-16 text-muted-foreground" />
-              <h2 className="text-xl font-semibold">У вас ще немає друзів</h2>
+              <h2 className="text-xl font-semibold text-center">У вас ще немає друзів</h2>
               <p className="text-muted-foreground max-w-md text-center">
                 Додайте друзів, щоб ділитися з ними списками переглядів фільмів
               </p>
@@ -353,9 +357,9 @@ function FriendsContent() {
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : pendingFriends.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
               {pendingFriends.map((request) => (
-                <Card key={request.id} className="overflow-hidden">
+                <Card key={request.id} className="overflow-hidden h-full">
                   <CardContent className="pt-6">
                     <div className="flex items-center gap-4">
                       <div className="relative h-16 w-16 rounded-full overflow-hidden bg-muted flex items-center justify-center">
@@ -382,10 +386,10 @@ function FriendsContent() {
                       </div>
                     </div>
                   </CardContent>
-                  <CardFooter className="flex gap-2 justify-between">
+                  <CardFooter className="flex flex-col sm:flex-row gap-2">
                     <Button 
                       variant="default" 
-                      className="flex-1"
+                      className="w-full sm:flex-1"
                       onClick={() => handleAcceptRequest(request.id)}
                       disabled={isRespondingToRequest}
                     >
@@ -398,7 +402,7 @@ function FriendsContent() {
                     </Button>
                     <Button 
                       variant="outline" 
-                      className="flex-1"
+                      className="w-full sm:flex-1"
                       onClick={() => handleRejectRequest(request.id)}
                       disabled={isRespondingToRequest}
                     >
@@ -412,7 +416,7 @@ function FriendsContent() {
           ) : (
             <div className="flex flex-col items-center justify-center py-12 space-y-4">
               <Clock className="h-16 w-16 text-muted-foreground" />
-              <h2 className="text-xl font-semibold">Немає нових запитів на дружбу</h2>
+              <h2 className="text-xl font-semibold text-center">Немає нових запитів на дружбу</h2>
               <p className="text-muted-foreground max-w-md text-center">
                 Тут з'являться запити на дружбу від інших користувачів
               </p>
@@ -426,9 +430,9 @@ function FriendsContent() {
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : sentFriends.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
               {sentFriends.map((request) => (
-                <Card key={request.id} className="overflow-hidden">
+                <Card key={request.id} className="overflow-hidden h-full">
                   <CardContent className="pt-6">
                     <div className="flex items-center gap-4">
                       <div className="relative h-16 w-16 rounded-full overflow-hidden bg-muted flex items-center justify-center">
@@ -461,101 +465,102 @@ function FriendsContent() {
                   </CardContent>
                   <CardFooter>
                     <Button 
-variant="outline" 
-className="w-full"
-onClick={() => handleCancelRequest(request.id)}
-disabled={isRemovingFriend}
->
-{isRemovingFriend ? (
-  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-) : (
-  <X className="mr-2 h-4 w-4" />
-)}
-Скасувати запит
-</Button>
-</CardFooter>
-</Card>
-))}
-</div>
-) : (
-<div className="flex flex-col items-center justify-center py-12 space-y-4">
-<Send className="h-16 w-16 text-muted-foreground" />
-<h2 className="text-xl font-semibold">Ви не надіслали жодного запиту</h2>
-<p className="text-muted-foreground max-w-md text-center">
-Надішліть запити друзям, щоб почати ділитися списками переглядів фільмів
-</p>
-<Button onClick={() => setAddFriendDialogOpen(true)} variant="default" className="mt-4">
-<UserPlus className="mr-2 h-4 w-4" />
-Додати друга
-</Button>
-</div>
-)}
-</TabsContent>
-</Tabs>
+                      variant="outline" 
+                      className="w-full"
+                      onClick={() => handleCancelRequest(request.id)}
+                      disabled={isRemovingFriend}
+                    >
+                      {isRemovingFriend ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <X className="mr-2 h-4 w-4" />
+                      )}
+                      Скасувати запит
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 space-y-4">
+              <Send className="h-16 w-16 text-muted-foreground" />
+              <h2 className="text-xl font-semibold text-center">Ви не надіслали жодного запиту</h2>
+              <p className="text-muted-foreground max-w-md text-center">
+                Надішліть запити друзям, щоб почати ділитися списками переглядів фільмів
+              </p>
+              <Button onClick={() => setAddFriendDialogOpen(true)} variant="default" className="mt-4">
+                <UserPlus className="mr-2 h-4 w-4" />
+                Додати друга
+              </Button>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
 
-<Dialog open={addFriendDialogOpen} onOpenChange={setAddFriendDialogOpen}>
-<DialogContent className="sm:max-w-[425px]">
-<DialogHeader>
-<DialogTitle>Додати друга</DialogTitle>
-<DialogDescription>
-Введіть електронну пошту користувача, якого хочете додати в друзі
-</DialogDescription>
-</DialogHeader>
+      <Dialog open={addFriendDialogOpen} onOpenChange={setAddFriendDialogOpen}>
+        <DialogContent className="sm:max-w-[425px] max-w-[95vw] w-full">
+          <DialogHeader>
+            <DialogTitle>Додати друга</DialogTitle>
+            <DialogDescription>
+              Введіть електронну пошту користувача, якого хочете додати в друзі
+            </DialogDescription>
+          </DialogHeader>
 
-<form onSubmit={handleAddFriend}>
-{addFriendError && (
-<Alert variant="destructive" className="mb-4">
-<AlertDescription>
-<AlertCircle className="h-4 w-4 mr-2 inline-block" />
-{addFriendError}
-</AlertDescription>
-</Alert>
-)}
+          <form onSubmit={handleAddFriend}>
+            {addFriendError && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertDescription>
+                  <AlertCircle className="h-4 w-4 mr-2 inline-block" />
+                  {addFriendError}
+                </AlertDescription>
+              </Alert>
+            )}
 
-<div className="grid gap-4 py-4">
-<div className="grid grid-cols-4 items-center gap-4">
-<div className="col-span-4">
-<Input
-id="friendEmail"
-placeholder="email@example.com"
-value={friendEmail}
-onChange={(e) => setFriendEmail(e.target.value)}
-required
-type="email"
-className="w-full"
-/>
-</div>
-</div>
-</div>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <div className="col-span-4">
+                  <Input
+                    id="friendEmail"
+                    placeholder="email@example.com"
+                    value={friendEmail}
+                    onChange={(e) => setFriendEmail(e.target.value)}
+                    required
+                    type="email"
+                    className="w-full"
+                  />
+                </div>
+              </div>
+            </div>
 
-<DialogFooter>
-<Button 
-type="button" 
-variant="outline" 
-onClick={() => setAddFriendDialogOpen(false)}
->
-Скасувати
-</Button>
-<Button 
-type="submit" 
-disabled={isAddingFriend || !friendEmail}
->
-{isAddingFriend ? (
-<>
-<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-Відправка...
-</>
-) : (
-<>
-<UserPlus className="mr-2 h-4 w-4" />
-Надіслати запит
-</>
-)}
-</Button>
-</DialogFooter>
-</form>
-</DialogContent>
-</Dialog>
-</div>
-);
-}
+            <DialogFooter className="flex-col sm:flex-row gap-2">
+              <Button 
+                type="button" 
+                variant="outline" 
+                className="w-full sm:w-auto"
+                onClick={() => setAddFriendDialogOpen(false)}
+              >
+                Скасувати
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={isAddingFriend || !friendEmail}
+                className="w-full sm:w-auto"
+              >
+                {isAddingFriend ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Відправка...
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Надіслати запит
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )};

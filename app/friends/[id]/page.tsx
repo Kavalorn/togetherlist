@@ -29,17 +29,8 @@ function FriendWatchlistContent() {
   const params = useParams();
   const friendEmail = params.id as string;
   
-  console.log('Friend Email from params:', friendEmail);
-  
   const { user, isLoading: isAuthLoading } = useAuthStore();
   const { data, isLoading, isError, error, refetch } = useFriendWatchlist(friendEmail);
-  
-  console.log('useFriendWatchlist result:', { 
-    data: data ? { friend: data.friend, watchlistLength: data.watchlist?.length } : null, 
-    isLoading, 
-    isError, 
-    error 
-  });
   
   // Ініціалізація стану аутентифікації при завантаженні сторінки
   useEffect(() => {
@@ -52,29 +43,6 @@ function FriendWatchlistContent() {
       router.push('/');
     }
   }, [isAuthLoading, user, router]);
-  
-  // Ручне тестування API
-  const testApi = async () => {
-    try {
-      const token = useAuthStore.getState().session?.access_token;
-      
-      const response = await fetch(`/api/friends/${encodeURIComponent(friendEmail)}/watchlist`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      const data = await response.json();
-      console.log('API test response:', data);
-      alert('Перевірте консоль для деталей відповіді API');
-      
-      // Оновити дані після тесту
-      refetch();
-    } catch (error) {
-      console.error('API test error:', error);
-      alert('Тест API не вдався. Перевірте консоль.');
-    }
-  };
   
   // Якщо перевіряється стан аутентифікації, показуємо індикатор завантаження
   if (isAuthLoading) {
@@ -89,9 +57,12 @@ function FriendWatchlistContent() {
   // Якщо користувач не авторизований, показуємо повідомлення про необхідність входу
   if (!user) {
     return (
-      <div className="flex flex-col items-center justify-center h-[50vh]">
-        <h1 className="text-2xl font-bold mb-4">Авторизуйтесь для доступу до списку фільмів друга</h1>
-        <p className="text-muted-foreground mb-6">Для використання цієї функції необхідно увійти в свій обліковий запис</p>
+      <div className="flex flex-col items-center justify-center h-[50vh] p-4">
+        <h1 className="text-xl sm:text-2xl font-bold mb-4 text-center">Авторизуйтесь для доступу до списку фільмів друга</h1>
+        <p className="text-muted-foreground mb-6 text-center">Для використання цієї функції необхідно увійти в свій обліковий запис</p>
+        <Button onClick={() => router.push('/')} variant="default">
+          На головну
+        </Button>
       </div>
     );
   }
@@ -100,7 +71,7 @@ function FriendWatchlistContent() {
   if (isError) {
     return (
       <div className="space-y-6">
-        <Button variant="outline" onClick={() => router.push('/friends')}>
+        <Button variant="outline" onClick={() => router.push('/friends')} className="w-full sm:w-auto">
           <ArrowLeft className="mr-2 h-4 w-4" />
           Назад до списку друзів
         </Button>
@@ -111,19 +82,13 @@ function FriendWatchlistContent() {
             {error instanceof Error ? error.message : 'Не вдалося завантажити список фільмів друга'}
           </AlertDescription>
         </Alert>
-        
-        <div className="flex justify-end">
-          <Button variant="outline" onClick={testApi}>
-            Тест API
-          </Button>
-        </div>
       </div>
     );
   }
   
   return (
-    <div className="space-y-8">
-      <Button variant="outline" onClick={() => router.push('/friends')}>
+    <div className="space-y-6 sm:space-y-8">
+      <Button variant="outline" onClick={() => router.push('/friends')} className="w-full sm:w-auto">
         <ArrowLeft className="mr-2 h-4 w-4" />
         Назад до списку друзів
       </Button>
@@ -152,7 +117,7 @@ function FriendWatchlistContent() {
                 )}
               </div>
               <div>
-                <h1 className="text-2xl font-bold">
+                <h1 className="text-xl sm:text-2xl font-bold">
                   {data.friend?.display_name || data.friend?.email || 'Друг'}
                 </h1>
                 {data.friend?.display_name && data.friend?.email && (
@@ -161,7 +126,7 @@ function FriendWatchlistContent() {
               </div>
             </div>
             
-            <div className="flex items-center gap-2 ml-auto">
+            <div className="flex items-center gap-2 ml-0 sm:ml-auto">
               <div className="flex items-center text-muted-foreground">
                 <UserCheck className="h-4 w-4 mr-1" />
                 <span>Друзі</span>
@@ -176,7 +141,7 @@ function FriendWatchlistContent() {
           <Separator />
           
           {data.watchlist.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
               {data.watchlist.map((movie) => (
                 <MovieCard
                   key={movie.id || movie.movie_id}
@@ -194,15 +159,10 @@ function FriendWatchlistContent() {
           ) : (
             <div className="flex flex-col items-center justify-center py-12 space-y-4">
               <Bookmark className="h-16 w-16 text-muted-foreground" />
-              <h2 className="text-xl font-semibold">Список перегляду порожній</h2>
+              <h2 className="text-xl font-semibold text-center">Список перегляду порожній</h2>
               <p className="text-muted-foreground max-w-md text-center">
                 У цього користувача ще немає фільмів у списку перегляду
               </p>
-              <div className="mt-4">
-                <Button variant="outline" onClick={testApi}>
-                  Тест API
-                </Button>
-              </div>
             </div>
           )}
         </>
@@ -210,11 +170,6 @@ function FriendWatchlistContent() {
         <div className="flex flex-col items-center justify-center py-12">
           <h2 className="text-xl font-semibold mb-2">Дані не знайдено</h2>
           <p className="text-muted-foreground">Не вдалося завантажити інформацію</p>
-          <div className="mt-4">
-            <Button variant="outline" onClick={testApi}>
-              Тест API
-            </Button>
-          </div>
         </div>
       )}
     </div>

@@ -33,14 +33,14 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
   // Компактний варіант картки для списку фільмів актора
   if (variant === 'compact') {
     return (
-      <Card className={"overflow-hidden hover:shadow-md transition-shadow duration-200 p-0"}>
+      <Card className="overflow-hidden hover:shadow-md transition-shadow duration-200 p-0 h-full">
         <div className="relative aspect-[2/3] w-full">
           <Image
             src={movie.poster_path ? `https://image.tmdb.org/t/p/w342${movie.poster_path}` : '/placeholder-poster.png'}
             alt={movie.title}
             fill
             className="object-cover"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
             onError={() => setImageError(true)}
           />
           {movie.vote_average && (
@@ -79,7 +79,7 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
 
   // Повний варіант картки для результатів пошуку
   return (
-    <Card className="overflow-hidden hover:shadow-md transition-shadow duration-200 p-0">
+    <Card className="overflow-hidden hover:shadow-md transition-shadow duration-200 p-0 h-full flex flex-col">
       <div className="relative aspect-[2/3] w-full">
         <Image
           src={movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : '/placeholder-poster.png'}
@@ -87,12 +87,12 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
           fill
           className="object-cover cursor-pointer"
           onClick={handleOpenDetails}
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
           onError={() => setImageError(true)}
         />
         {movie.vote_average && (
-          <div className="absolute top-2 left-2 bg-black/75 text-white px-2 py-1 rounded-md text-sm font-semibold flex items-center gap-1">
-            <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+          <div className="absolute top-2 left-2 bg-black/75 text-white px-2 py-1 rounded-md text-xs sm:text-sm font-semibold flex items-center gap-1">
+            <Star className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-400 fill-yellow-400" />
             <span>{movie.vote_average.toFixed(1)}</span>
           </div>
         )}
@@ -106,31 +106,31 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
           }}
         >
           {isInWatchlist(movie.id) ? (
-            <BookmarkCheck className="h-6 w-6 text-yellow-500 fill-yellow-500" />
+            <BookmarkCheck className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-500 fill-yellow-500" />
           ) : (
-            <Bookmark className="h-6 w-6 text-gray-500" />
+            <Bookmark className="h-5 w-5 sm:h-6 sm:w-6 text-gray-500" />
           )}
         </Button>
       </div>
-      <div className='flex flex-col justify-between h-full'>
+      <div className='flex flex-col justify-between flex-grow'>
         <CardContent className="p-4">
           <h2
-            className="text-xl font-bold tracking-tight mb-1 cursor-pointer"
+            className="text-base sm:text-xl font-bold tracking-tight mb-1 cursor-pointer"
             onClick={handleOpenDetails}
           >
             {movie.title}
           </h2>
-          <p className="text-sm text-muted-foreground mb-2">
+          <p className="text-xs sm:text-sm text-muted-foreground mb-2">
             {movie.release_date ? format(new Date(movie.release_date), 'dd MMM yyyy') : 'Невідома дата'}
           </p>
-          <p className="text-sm line-clamp-3 mb-3">
+          <p className="text-xs sm:text-sm line-clamp-3 mb-3">
             {movie.overview || 'Опис відсутній'}
           </p>
         </CardContent>
-        <CardFooter className="p-4 pt-0 flex gap-2 justify-between">
+        <CardFooter className="p-4 pt-0 flex flex-col sm:flex-row gap-2">
           <Button
             variant="default"
-            className="flex-1"
+            className="w-full sm:flex-1"
             onClick={handleOpenDetails}
           >
             <Info className="mr-2 h-4 w-4" />
@@ -138,7 +138,7 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
           </Button>
           <Button
             variant={isInWatchlist(movie.id) ? "secondary" : "outline"}
-            className={`flex-1 ${isInWatchlist(movie.id) ? "text-yellow-600" : ""}`}
+            className={`w-full sm:flex-1 ${isInWatchlist(movie.id) ? "text-yellow-600" : ""}`}
             onClick={() => toggleWatchlist(movie as any)}
           >
             {isInWatchlist(movie.id) ? (

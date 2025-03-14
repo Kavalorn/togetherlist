@@ -17,7 +17,7 @@ export const MoviesList = ({isLoading, movies = [], emptyPlaceholder = "Пуст
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : movies && movies.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
           {movies.map((movie) => (
             <MovieCard key={movie.id} movie={movie} />
           ))}
