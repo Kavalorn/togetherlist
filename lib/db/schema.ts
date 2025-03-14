@@ -1,3 +1,4 @@
+// lib/db/schema.ts
 import { pgTable, serial, integer, text, timestamp, real, uniqueIndex, boolean, primaryKey } from 'drizzle-orm/pg-core';
 
 // Схема таблиці списку перегляду для PostgreSQL
@@ -10,6 +11,7 @@ export const watchlistTable = pgTable('watchlist', {
   releaseDate: text('release_date'),
   overview: text('overview'),
   voteAverage: real('vote_average'),
+  voteCount: integer('vote_count'), // Додаємо поле для кількості голосів
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow()
 }, (table) => {
   return {
@@ -18,7 +20,7 @@ export const watchlistTable = pgTable('watchlist', {
   }
 });
 
-// Нова схема для управління друзями
+// Схема для управління друзями
 export const friendsTable = pgTable('friends', {
   id: serial('id').primaryKey(),
   userEmail: text('user_email').notNull(),
@@ -42,6 +44,7 @@ export const emailWatchlistTable = pgTable('email_watchlist', {
   releaseDate: text('release_date'),
   overview: text('overview'),
   voteAverage: real('vote_average'),
+  voteCount: integer('vote_count'), // Додаємо поле для кількості голосів
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow()
 }, (table) => {
   return {

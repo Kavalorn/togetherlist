@@ -10,6 +10,7 @@ export interface Movie {
   overview?: string;
   vote_average?: number;
   popularity?: number;
+  vote_count?: number;
 }
 
 // Детальна інформація про фільм

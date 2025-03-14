@@ -4,6 +4,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { MovieDetails } from '@/lib/tmdb';
 import { useAuthStore } from '@/store/auth-store';
+import { useMovieDetails } from '@/hooks/use-movies'; // додаємо імпорт для отримання повних деталей фільму
 
 // Функції для API запитів
 const fetchWatchlist = async (token: string | null = null): Promise<any[]> => {
@@ -37,7 +38,8 @@ const addToWatchlist = async (movie: MovieDetails, token: string | null = null) 
       poster_path: movie.poster_path,
       release_date: movie.release_date,
       overview: movie.overview,
-      vote_average: movie.vote_average
+      vote_average: movie.vote_average,
+      vote_count: movie.vote_count // Додаємо кількість голосів
     })
   });
   
@@ -106,17 +108,39 @@ export function useWatchlist() {
     });
   };
   
-  // Функція для переключення фільму у списку перегляду
-  const toggleWatchlist = (movie: MovieDetails) => {
+  // Функція для переключення фільму у списку перегляду з отриманням більш повних даних
+  const toggleWatchlist = async (movie: MovieDetails) => {
     if (isInWatchlist(movie.id)) {
       removeMutation.mutate(movie.id);
     } else {
-      addMutation.mutate(movie);
+      try {
+        // Якщо vote_count відсутній, спробуємо отримати повні дані фільму
+        if (movie.vote_count === undefined || movie.vote_count === null) {
+          const response = await fetch(`/api/movies/${movie.id}`);
+          if (response.ok) {
+            const fullMovieData = await response.json();
+            addMutation.mutate({
+              ...movie,
+              vote_count: fullMovieData.vote_count || 0
+            });
+            return;
+          }
+        }
+        // Якщо неможливо отримати додаткові дані або вони вже є
+        addMutation.mutate(movie);
+      } catch (error) {
+        console.error('Помилка при отриманні повних даних фільму:', error);
+        // Додаємо фільм як є, якщо сталася помилка
+        addMutation.mutate(movie);
+      }
     }
   };
   
+  // Отримання повних даних фільмів для списку перегляду
+  const watchlistWithFullData = watchlistQuery.data || [];
+  
   return {
-    watchlist: watchlistQuery.data || [],
+    watchlist: watchlistWithFullData,
     isLoading: watchlistQuery.isLoading,
     isError: watchlistQuery.isError,
     error: watchlistQuery.error,

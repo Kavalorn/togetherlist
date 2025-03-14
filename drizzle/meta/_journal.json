@@ -36,6 +36,13 @@
       "when": 1741895490709,
       "tag": "0004_goofy_sandman",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1741993512825,
+      "tag": "0005_white_shaman",
+      "breakpoints": true
     }
   ]
 }

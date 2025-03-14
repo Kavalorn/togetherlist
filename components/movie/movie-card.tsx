@@ -23,6 +23,10 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
   const { data: movieDetails } = useMovieDetails(movie.id);
   const [imageError, setImageError] = useState(false);
 
+  // Забезпечуємо, що у нас є значення рейтингу та кількості голосів
+  const voteAverage = movie.vote_average !== undefined ? movie.vote_average : movieDetails?.vote_average || 0;
+  const voteCount = movie.vote_count !== undefined ? movie.vote_count : movieDetails?.vote_count || 0;
+
   // Обробник відкриття деталей фільму
   const handleOpenDetails = () => {
     if (movieDetails) {
@@ -43,10 +47,10 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
             sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
             onError={() => setImageError(true)}
           />
-          {movie.vote_average && (
+          {voteAverage > 0 && (
             <div className="absolute top-2 left-2 bg-black/75 text-white px-2 py-1 rounded-md text-xs font-semibold flex items-center gap-1">
               <Star className="h-3 w-3 text-yellow-400 fill-yellow-400" />
-              <span>{movie.vote_average.toFixed(1)}</span>
+              <span>{voteAverage.toFixed(1)} ({voteCount})</span>
             </div>
           )}
           <Button
@@ -90,10 +94,10 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
           sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
           onError={() => setImageError(true)}
         />
-        {movie.vote_average && (
+        {voteAverage > 0 && (
           <div className="absolute top-2 left-2 bg-black/75 text-white px-2 py-1 rounded-md text-xs sm:text-sm font-semibold flex items-center gap-1">
             <Star className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-400 fill-yellow-400" />
-            <span>{movie.vote_average.toFixed(1)}</span>
+            <span>{voteAverage.toFixed(1)} ({voteCount})</span>
           </div>
         )}
         <Button

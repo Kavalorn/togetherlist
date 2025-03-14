@@ -26,7 +26,7 @@ export function MovieDetailsModal() {
 
   // Форматування рейтингу
   const formattedRating = selectedMovie.vote_average
-    ? `${(selectedMovie.vote_average).toFixed(1)}/10`
+    ? `${(selectedMovie.vote_average).toFixed(1)}/10 (${selectedMovie.vote_count} голосів)`
     : 'Немає оцінки';
 
   return (

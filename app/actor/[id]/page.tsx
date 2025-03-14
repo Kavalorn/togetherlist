@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, Suspense } from 'react';
+import { useEffect, Suspense, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { format } from 'date-fns';
@@ -11,7 +11,15 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MovieCard } from '@/components/movie/movie-card';
-import { ArrowLeft, CalendarIcon, Clock, Loader2, MapPin } from 'lucide-react';
+import { ArrowLeft, Calendar, CalendarIcon, Clock, Loader2, MapPin, SortAsc, SortDesc } from 'lucide-react';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel
+} from '@/components/ui/dropdown-menu';
 
 export default function ActorPage() {
   return (
@@ -31,6 +39,11 @@ function ActorContent() {
   const router = useRouter();
   const personId = params.id ? parseInt(params.id as string, 10) : null;
   
+  // Стан для сортування
+  const [sortField, setSortField] = useState('rating');
+  const [sortDirection, setSortDirection] = useState('desc');
+  const [activeTab, setActiveTab] = useState('cast');
+  
   // Отримання даних про актора та його фільмографію
   const { data: personDetails, isLoading: isLoadingPerson, isError: isPersonError } = usePersonDetails(personId);
   const { data: personMovieCredits, isLoading: isLoadingMovies, isError: isMoviesError } = usePersonMovieCredits(personId);
@@ -45,14 +58,76 @@ function ActorContent() {
       )
     : null;
   
-  // Сортування фільмів за популярністю
-  const sortedCastMovies = personMovieCredits?.cast
-    ? [...personMovieCredits.cast].sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
-    : [];
+  // Функція сортування фільмів
+  const sortMovies = (movies: any) => {
+    if (!movies || !movies.length) return [];
+    
+    return [...movies].sort((a, b) => {
+      let aValue, bValue;
+      
+      // Визначення значень для сортування
+      switch(sortField) {
+        case 'rating':
+          aValue = a.vote_average || 0;
+          bValue = b.vote_average || 0;
+          break;
+        case 'year':
+          aValue = a.release_date ? new Date(a.release_date).getFullYear() : 0;
+          bValue = b.release_date ? new Date(b.release_date).getFullYear() : 0;
+          break;
+        default:
+          aValue = a.vote_average || 0;
+          bValue = b.vote_average || 0;
+      }
+      
+      // Напрямок сортування
+      return sortDirection === 'desc' ? bValue - aValue : aValue - bValue;
+    });
+  };
   
-  const sortedCrewMovies = personMovieCredits?.crew
-    ? [...personMovieCredits.crew].sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
-    : [];
+  // Сортовані фільми
+  const sortedCastMovies = personMovieCredits?.cast ? sortMovies(personMovieCredits.cast) : [];
+  const sortedCrewMovies = personMovieCredits?.crew ? sortMovies(personMovieCredits.crew) : [];
+  
+  // Функція перемикання напрямку сортування
+  const toggleSortDirection = () => {
+    setSortDirection(sortDirection === 'desc' ? 'asc' : 'desc');
+  };
+  
+  // Функція зміни поля сортування
+  const changeSortField = (field: any) => {
+    if (sortField === field) {
+      toggleSortDirection();
+    } else {
+      setSortField(field);
+      setSortDirection('desc');
+    }
+  };
+  
+  // Отримання іконки для кнопки сортування
+  const getSortIcon = () => {
+    if (sortDirection === 'desc') {
+      return <SortDesc className="h-4 w-4" />;
+    }
+    return <SortAsc className="h-4 w-4" />;
+  };
+  
+  // Отримання тексту для кнопки сортування
+  const getSortText = () => {
+    let fieldText = '';
+    switch(sortField) {
+      case 'rating':
+        fieldText = 'рейтингом';
+        break;
+      case 'year':
+        fieldText = 'роком';
+        break;
+      default:
+        fieldText = 'рейтингом';
+    }
+    
+    return `За ${fieldText} (${sortDirection === 'desc' ? 'спадання' : 'зростання'})`;
+  };
   
   // Якщо ідентифікатор актора відсутній або некоректний
   if (!personId || isNaN(personId)) {
@@ -192,7 +267,42 @@ function ActorContent() {
           
           <Separator className="my-6" />
           
-          <h2 className="text-lg sm:text-xl font-semibold mb-4">Фільмографія</h2>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4">
+            <h2 className="text-lg sm:text-xl font-semibold">Фільмографія</h2>
+            
+            {/* Кнопка сортування */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="flex gap-2 mt-2 sm:mt-0">
+                  {getSortIcon()}
+                  <span className="hidden sm:inline">{getSortText()}</span>
+                  <span className="sm:hidden">Сортування</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Сортувати за</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  onClick={() => changeSortField('rating')}
+                  className="flex justify-between"
+                >
+                  <span>Рейтинг</span>
+                  {sortField === 'rating' && getSortIcon()}
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => changeSortField('year')}
+                  className="flex justify-between"
+                >
+                  <span>Рік випуску</span>
+                  {sortField === 'year' && getSortIcon()}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={toggleSortDirection}>
+                  {sortDirection === 'desc' ? 'За зростанням' : 'За спаданням'}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
           
           {isLoadingMovies ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
@@ -205,7 +315,7 @@ function ActorContent() {
               ))}
             </div>
           ) : (
-            <Tabs defaultValue="cast">
+            <Tabs defaultValue="cast" value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="w-full flex justify-start mb-4">
                 <TabsTrigger value="cast" className="flex-1 sm:flex-none">
                   Фільми ({sortedCastMovies.length})
