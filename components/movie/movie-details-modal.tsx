@@ -58,16 +58,6 @@ export function MovieDetailsModal() {
           )}
 
           <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
-          
-          {/* Кнопка закриття (додана для мобільних пристроїв) */}
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="absolute top-3 right-3 bg-black/40 hover:bg-black/60 text-white rounded-full z-10" 
-            onClick={closeMovieDetailsModal}
-          >
-            <X className="h-5 w-5" />
-          </Button>
         </div>
 
         <div className="relative p-4 sm:p-6 pt-0 mt-[-3rem]">
