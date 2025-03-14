@@ -1,8 +1,9 @@
+// components/layout/main-nav.tsx
 'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Search, BookmarkIcon, Film, Users, Menu, X } from 'lucide-react';
+import { Search, BookmarkIcon, Film, Users, Menu, X, Shuffle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
@@ -49,6 +50,12 @@ export function MainNav() {
       label: "Пошук",
       icon: <Search className="h-4 w-4 mr-2" />,
       isActive: pathname === "/"
+    },
+    {
+      href: "/discover",
+      label: "Відкрийте",
+      icon: <Shuffle className="h-4 w-4 mr-2" />,
+      isActive: pathname === "/discover"
     },
     {
       href: "/watchlist",

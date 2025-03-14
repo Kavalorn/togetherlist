@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { 
   tmdbApi, 
   Movie, 
@@ -79,5 +79,17 @@ export function useNowPlayingMovies(page = 1) {
   return useQuery({
     queryKey: ['movies', 'now_playing', page],
     queryFn: () => tmdbApi.getNowPlayingMovies(page),
+  });
+}
+
+// Хук для отримання випадкових фільмів
+export function useSingleRandomMovie() {
+  const queryClient = useQueryClient();
+  
+  return useQuery({
+    queryKey: ['movie', 'random', Math.random()], // Унікальний ключ для кожного запиту
+    queryFn: () => tmdbApi.getRandomMovie(),
+    staleTime: 0, // Завжди отримувати новий фільм
+    cacheTime: 0, // Не кешувати результат
   });
 }

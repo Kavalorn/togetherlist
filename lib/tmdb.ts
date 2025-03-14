@@ -97,7 +97,18 @@ export interface PersonMovieCredits {
   crew: CrewMovie[]; // Використовуємо CrewMovie замість Movie & {...}
 }
 
-const language = {
+// Інтерфейс для фільтрів
+interface RandomMovieFilters {
+  minRating?: number;
+  maxRating?: number;
+  minYear?: number;
+  maxYear?: number;
+  language?: string | null;
+  includeAdult?: boolean;
+  genre?: string | null;
+}
+
+const showLanguage = {
   language: 'uk-UA'
 }
 
@@ -131,12 +142,12 @@ export const tmdbApi = {
   searchMovies: (query: string, page = 1) =>
     fetchFromTMDB<{ results: Movie[]; total_results: number; total_pages: number }>(
       '/search/movie',
-      { query, page: page.toString(), ...language }
+      { query, page: page.toString(), ...showLanguage }
     ),
 
   // Отримання деталей фільму
   getMovieDetails: (id: number) =>
-    fetchFromTMDB<MovieDetails>(`/movie/${id}`, {...language}),
+    fetchFromTMDB<MovieDetails>(`/movie/${id}`, {...showLanguage}),
 
   // Отримання акторського складу фільму
   getMovieCredits: (id: number) =>
@@ -148,7 +159,7 @@ export const tmdbApi = {
 
   // Отримання інформації про актора
   getPersonDetails: (id: number) =>
-    fetchFromTMDB<PersonDetails>(`/person/${id}`, {...language}),
+    fetchFromTMDB<PersonDetails>(`/person/${id}`, {...showLanguage}),
 
   // Отримання фільмографії актора
   getPersonMovieCredits: (id: number) =>
@@ -158,13 +169,131 @@ export const tmdbApi = {
   getPopularMovies: (page = 1) =>
     fetchFromTMDB<{ results: Movie[]; total_results: number; total_pages: number }>(
       '/movie/popular',
-      { page: page.toString(), ...language }
+      { page: page.toString(), ...showLanguage }
     ),
 
   // Отримання фільмів у прокаті
   getNowPlayingMovies: (page = 1) =>
     fetchFromTMDB<{ results: Movie[]; total_results: number; total_pages: number }>(
       '/movie/now_playing',
-      { page: page.toString(), ...language }
+      { page: page.toString(), ...showLanguage }
     ),
+
+  // Отримання випадкових фільмів
+  getRandomMovie: async (filters: RandomMovieFilters = {}) => {
+    try {
+      // Встановлюємо значення за замовчуванням для фільтрів
+      const currentYear = new Date().getFullYear();
+      const {
+        minRating = 0,
+        maxRating = 10,
+        minYear = 1900,
+        maxYear = currentYear,
+        language = null,
+        includeAdult = false,
+        genre = null
+      } = filters;
+
+      // Випадкові критерії сортування
+      const sortOptions = [
+        'popularity.desc', 
+        'popularity.asc',
+        'vote_average.desc', 
+        'vote_average.asc',
+        'primary_release_date.desc', 
+        'primary_release_date.asc',
+        'revenue.desc',
+        'revenue.asc',
+        'original_title.asc',
+        'original_title.desc'
+      ];
+      const randomSort = sortOptions[Math.floor(Math.random() * sortOptions.length)];
+      
+      // Випадкова сторінка з максимально можливого діапазону
+      const randomPage = Math.floor(Math.random() * 499) + 1; // 1-500
+      
+      // Параметри запиту
+      const params: Record<string, string> = {
+        sort_by: randomSort,
+        page: randomPage.toString(),
+        'vote_average.gte': minRating.toString(),
+        'vote_average.lte': maxRating.toString(),
+        'primary_release_date.gte': `${minYear}-01-01`,
+        'primary_release_date.lte': `${maxYear}-12-31`,
+        include_adult: includeAdult.toString(),
+        ...showLanguage
+      };
+
+      // Додаємо мову, якщо вказана
+      if (language) {
+        params.with_original_language = language;
+      }
+
+      // Додаємо жанр, якщо вказаний
+      if (genre) {
+        params.with_genres = genre;
+      }
+
+      // Виконуємо запит до API
+      const response = await fetchFromTMDB<{ results: Movie[]; total_results: number; total_pages: number }>(
+        '/discover/movie',
+        { 
+          ...params,
+          ...showLanguage
+        }
+      );
+      
+      // Беремо випадковий фільм з результатів
+      if (response.results && response.results.length > 0) {
+        const randomIndex = Math.floor(Math.random() * response.results.length);
+        return response.results[randomIndex];
+      }
+      
+      // Якщо нічого не знайдено, робимо більш простий запит
+      // Зменшуємо обмеження на фільтри
+      const fallbackResponse = await fetchFromTMDB<{ results: Movie[] }>(
+        '/discover/movie',
+        { 
+          sort_by: 'popularity.desc',
+          'vote_average.gte': '0',
+          include_adult: includeAdult.toString(),
+          page: Math.floor(Math.random() * 20 + 1).toString(),
+          ...showLanguage
+        }
+      );
+      
+      if (fallbackResponse.results && fallbackResponse.results.length > 0) {
+        const randomIndex = Math.floor(Math.random() * fallbackResponse.results.length);
+        return fallbackResponse.results[randomIndex];
+      }
+      
+      // Якщо все ще нічого не знайдено, просто беремо популярні фільми
+      const emergencyFallback = await fetchFromTMDB<{ results: Movie[] }>(
+        '/movie/popular',
+        { page: '1', ...showLanguage }
+      );
+      
+      if (emergencyFallback.results && emergencyFallback.results.length > 0) {
+        const randomIndex = Math.floor(Math.random() * emergencyFallback.results.length);
+        return emergencyFallback.results[randomIndex];
+      }
+      
+      throw new Error('No movies found');
+    } catch (error) {
+      console.error("Error fetching random movie:", error);
+      
+      // Останній запасний варіант - отримати просто популярні фільми
+      const emergencyFallback = await fetchFromTMDB<{ results: Movie[] }>(
+        '/movie/popular',
+        { page: '1', ...showLanguage }
+      );
+      
+      if (emergencyFallback.results && emergencyFallback.results.length > 0) {
+        const randomIndex = Math.floor(Math.random() * emergencyFallback.results.length);
+        return emergencyFallback.results[randomIndex];
+      }
+      
+      throw new Error('Failed to fetch any movies');
+    }
+  },
 };
