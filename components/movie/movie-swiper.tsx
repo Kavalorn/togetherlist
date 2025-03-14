@@ -29,6 +29,14 @@ import { Slider } from '@/components/ui/slider';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 
+// Функція для безпечного перетворення значення на число
+function safeNumberConversion(value: any): number {
+  if (value === undefined || value === null) return 0;
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') return parseInt(value, 10) || 0;
+  return 0;
+}
+
 // Тип для фільтрів
 interface MovieFilters {
   minRating: number;
@@ -44,7 +52,7 @@ interface MovieFilters {
 const FILTERS_STORAGE_KEY = 'movie-swiper-filters';
 
 // Функція для форматування дати
-function formatYear(dateString) {
+function formatYear(dateString: string) {
   if (!dateString) return '';
   return new Date(dateString).getFullYear().toString();
 }
@@ -131,6 +139,14 @@ export function MovieSwiper() {
         genre: filters.genre
       });
       setCurrentMovie(movie);
+      
+      // Логуємо для відлагодження
+      console.log("Завантажено випадковий фільм:", {
+        id: movie.id,
+        title: movie.title,
+        vote_count: movie.vote_count,
+        vote_average: movie.vote_average
+      });
     } catch (error) {
       console.error("Помилка при завантаженні фільму:", error);
       toast.error("Не вдалося завантажити фільм. Спробуйте ще раз.");
@@ -214,7 +230,13 @@ export function MovieSwiper() {
   // Обробник для кнопки "Лайк"
   const handleLike = () => {
     if (currentMovie && !isInWatchlist(currentMovie.id)) {
-      toggleWatchlist(currentMovie as MovieDetails);
+      // Переконуємося, що передаємо коректні дані, включно з vote_count
+      const movieToAdd = {
+        ...currentMovie,
+        vote_count: safeNumberConversion(currentMovie.vote_count)
+      };
+      
+      toggleWatchlist(movieToAdd as MovieDetails);
       toast.success('Фільм додано до списку перегляду');
     }
   };
@@ -356,6 +378,9 @@ export function MovieSwiper() {
       </div>
     );
   }
+  
+  // Отримуємо коректне значення vote_count
+  const voteCount = safeNumberConversion(currentMovie.vote_count);
 
   return (
     <>
@@ -429,12 +454,12 @@ export function MovieSwiper() {
                   <div className="relative p-3 pb-4">
                     <div className="flex flex-col gap-1">
                       <div className="flex items-center gap-2">
-                        {currentMovie.vote_average && (
+                        {currentMovie.vote_average ? (
                           <Badge variant="secondary" className="bg-yellow-500/80 text-white">
                             <Star className="w-3 h-3 mr-1" />
-                            {currentMovie.vote_average.toFixed(1)}
+                            {currentMovie.vote_average.toFixed(1)} ({voteCount})
                           </Badge>
-                        )}
+                        ) : null}
                         {currentMovie.release_date && (
                           <Badge variant="outline" className="bg-black/20 text-white border-none">
                             {formatYear(currentMovie.release_date)}

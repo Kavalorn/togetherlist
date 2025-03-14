@@ -1,3 +1,5 @@
+// lib/tmdb.ts (додаємо логування для vote_count)
+
 // Базова URL-адреса для запитів до TMDB API
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 
@@ -113,6 +115,23 @@ const showLanguage = {
   language: 'uk-UA'
 }
 
+// Функція для безпечного перетворення vote_count на число
+function safeNumberConversion(value: any): number {
+  if (value === undefined || value === null) return 0;
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') return parseInt(value, 10) || 0;
+  return 0;
+}
+
+// Функція для гарантування, що vote_count є числом для всіх фільмів
+function ensureMovieProperties(movie: any): Movie {
+  return {
+    ...movie,
+    // Переконуємося, що vote_count є числом
+    vote_count: safeNumberConversion(movie.vote_count)
+  };
+}
+
 // Функція для здійснення запитів до TMDB API
 const fetchFromTMDB = async <T>(endpoint: string, params: Record<string, string> = {}): Promise<T> => {
   const url = new URL(`${TMDB_BASE_URL}${endpoint}`);
@@ -134,21 +153,53 @@ const fetchFromTMDB = async <T>(endpoint: string, params: Record<string, string>
     throw new Error(`TMDB API error: ${response.status} ${response.statusText}`);
   }
 
-  return response.json() as Promise<T>;
+  const data = await response.json();
+  
+  // Якщо результат містить масив фільмів, обробляємо їх
+  if (data && data.results && Array.isArray(data.results)) {
+    // Обробляємо кожен фільм, щоб переконатися, що vote_count є числом
+    data.results = data.results.map((movie: any) => ensureMovieProperties(movie));
+  } 
+  // Якщо це один фільм, обробляємо його
+  else if (data && data.id && data.title) {
+    Object.assign(data, ensureMovieProperties(data));
+  }
+  
+  return data as T;
 };
 
 // API функції
 export const tmdbApi = {
   // Пошук фільмів
-  searchMovies: (query: string, page = 1) =>
-    fetchFromTMDB<{ results: Movie[]; total_results: number; total_pages: number }>(
+  searchMovies: async (query: string, page = 1) => {
+    const result = await fetchFromTMDB<{ results: Movie[]; total_results: number; total_pages: number }>(
       '/search/movie',
       { query, page: page.toString(), ...showLanguage }
-    ),
+    );
+    
+    // Додаткове логування для відлагодження
+    console.log("Результати пошуку фільмів:", result.results.map(movie => ({
+      id: movie.id,
+      title: movie.title,
+      vote_count: movie.vote_count
+    })));
+    
+    return result;
+  },
 
   // Отримання деталей фільму
-  getMovieDetails: (id: number) =>
-    fetchFromTMDB<MovieDetails>(`/movie/${id}`, {...showLanguage}),
+  getMovieDetails: async (id: number) => {
+    const result = await fetchFromTMDB<MovieDetails>(`/movie/${id}`, {...showLanguage});
+    
+    // Додаткове логування для відлагодження
+    console.log("Деталі фільму:", {
+      id: result.id,
+      title: result.title,
+      vote_count: result.vote_count
+    });
+    
+    return result;
+  },
 
   // Отримання акторського складу фільму
   getMovieCredits: (id: number) =>
@@ -167,11 +218,21 @@ export const tmdbApi = {
     fetchFromTMDB<PersonMovieCredits>(`/person/${id}/movie_credits`),
 
   // Отримання популярних фільмів
-  getPopularMovies: (page = 1) =>
-    fetchFromTMDB<{ results: Movie[]; total_results: number; total_pages: number }>(
+  getPopularMovies: async (page = 1) => {
+    const result = await fetchFromTMDB<{ results: Movie[]; total_results: number; total_pages: number }>(
       '/movie/popular',
       { page: page.toString(), ...showLanguage }
-    ),
+    );
+    
+    // Додаткове логування для відлагодження
+    console.log("Популярні фільми:", result.results.map(movie => ({
+      id: movie.id,
+      title: movie.title,
+      vote_count: movie.vote_count
+    })));
+    
+    return result;
+  },
 
   // Отримання фільмів у прокаті
   getNowPlayingMovies: (page = 1) =>
@@ -247,7 +308,17 @@ export const tmdbApi = {
       // Беремо випадковий фільм з результатів
       if (response.results && response.results.length > 0) {
         const randomIndex = Math.floor(Math.random() * response.results.length);
-        return response.results[randomIndex];
+        const randomMovie = response.results[randomIndex];
+        
+        // Логуємо для відлагодження
+        console.log("Обрано випадковий фільм:", {
+          id: randomMovie.id,
+          title: randomMovie.title,
+          vote_count: randomMovie.vote_count,
+          vote_average: randomMovie.vote_average
+        });
+        
+        return randomMovie;
       }
       
       // Якщо нічого не знайдено, робимо більш простий запит
@@ -265,7 +336,16 @@ export const tmdbApi = {
       
       if (fallbackResponse.results && fallbackResponse.results.length > 0) {
         const randomIndex = Math.floor(Math.random() * fallbackResponse.results.length);
-        return fallbackResponse.results[randomIndex];
+        const fallbackMovie = fallbackResponse.results[randomIndex];
+        
+        // Логуємо для відлагодження
+        console.log("Запасний варіант випадкового фільму:", {
+          id: fallbackMovie.id,
+          title: fallbackMovie.title,
+          vote_count: fallbackMovie.vote_count
+        });
+        
+        return fallbackMovie;
       }
       
       // Якщо все ще нічого не знайдено, просто беремо популярні фільми
@@ -276,7 +356,16 @@ export const tmdbApi = {
       
       if (emergencyFallback.results && emergencyFallback.results.length > 0) {
         const randomIndex = Math.floor(Math.random() * emergencyFallback.results.length);
-        return emergencyFallback.results[randomIndex];
+        const emergencyMovie = emergencyFallback.results[randomIndex];
+        
+        // Логуємо для відлагодження
+        console.log("Екстрений варіант фільму:", {
+          id: emergencyMovie.id,
+          title: emergencyMovie.title,
+          vote_count: emergencyMovie.vote_count
+        });
+        
+        return emergencyMovie;
       }
       
       throw new Error('No movies found');

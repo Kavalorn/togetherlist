@@ -11,8 +11,16 @@ import { useMovieCredits, useMovieImages } from '@/hooks/use-movies';
 import { Bookmark, BookmarkCheck, Star, X, Calendar, Clock, Users } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
+// Функція для безпечного перетворення значення на число
+function safeNumberConversion(value: any): number {
+  if (value === undefined || value === null) return 0;
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') return parseInt(value, 10) || 0;
+  return 0;
+}
+
 export function MovieDetailsModal() {
-  const { isMovieDetailsModalOpen, selectedMovie, closeMovieDetailsModal, openActorModal } = useUIStore();
+  const { isMovieDetailsModalOpen, selectedMovie, closeMovieDetailsModal } = useUIStore();
   const { isInWatchlist, toggleWatchlist } = useWatchlist();
 
   // Отримання додаткових даних про фільм (актори, зображення)
@@ -24,10 +32,28 @@ export function MovieDetailsModal() {
     return null;
   }
 
-  // Форматування рейтингу
+  // Форматування рейтингу та забезпечення, що vote_count є числом
+  const voteCount = safeNumberConversion(selectedMovie.vote_count);
   const formattedRating = selectedMovie.vote_average
-    ? `${(selectedMovie.vote_average).toFixed(1)}/10 (${selectedMovie.vote_count} голосів)`
+    ? `${(selectedMovie.vote_average).toFixed(1)}/10 (${voteCount} ${voteCount === 1 ? 'голос' : 'голосів'})`
     : 'Немає оцінки';
+
+  // Логуємо для відлагодження
+  console.log("Деталі фільму в модальному вікні:", {
+    id: selectedMovie.id,
+    title: selectedMovie.title,
+    vote_count: selectedMovie.vote_count,
+    formattedVoteCount: voteCount
+  });
+
+  // Функція для додавання до списку перегляду
+  const handleAddToWatchlist = () => {
+    // Забезпечуємо, що vote_count є числом
+    toggleWatchlist({
+      ...selectedMovie,
+      vote_count: voteCount
+    });
+  };
 
   return (
     <Dialog open={isMovieDetailsModalOpen} onOpenChange={(open) => !open && closeMovieDetailsModal()}>
@@ -83,7 +109,7 @@ export function MovieDetailsModal() {
                 <Button
                   variant={isInWatchlist(selectedMovie.id) ? "default" : "outline"}
                   className={`w-full ${isInWatchlist(selectedMovie.id) ? "bg-yellow-600 hover:bg-yellow-700" : ""}`}
-                  onClick={() => toggleWatchlist(selectedMovie)}
+                  onClick={handleAddToWatchlist}
                 >
                   {isInWatchlist(selectedMovie.id) ? (
                     <>
@@ -93,7 +119,7 @@ export function MovieDetailsModal() {
                   ) : (
                     <>
                       <Bookmark className="mr-2 h-5 w-5" />
-                      в список
+                      До списку
                     </>
                   )}
                 </Button>
