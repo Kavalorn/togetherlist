@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Star, Info, Bookmark, BookmarkCheck } from 'lucide-react';
@@ -10,7 +10,14 @@ import { useWatchlist } from '@/hooks/use-watchlist';
 import { useUIStore } from '@/store/ui-store';
 import { useMovieDetails } from '@/hooks/use-movies';
 import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
+
+// Функція для безпечного перетворення значення на число
+function safeNumberConversion(value: any): number {
+  if (value === undefined || value === null) return 0;
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') return parseInt(value, 10) || 0;
+  return 0;
+}
 
 interface MovieCardProps {
   movie: Movie;
@@ -25,13 +32,44 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
 
   // Забезпечуємо, що у нас є значення рейтингу та кількості голосів
   const voteAverage = movie.vote_average !== undefined ? movie.vote_average : movieDetails?.vote_average || 0;
-  const voteCount = movie.vote_count !== undefined ? movie.vote_count : movieDetails?.vote_count || 0;
+  
+  // Важливо: перевіряємо строго на undefined або null для vote_count і перетворюємо на число
+  const voteCount = safeNumberConversion(
+    movie.vote_count !== undefined && movie.vote_count !== null
+      ? movie.vote_count
+      : movieDetails?.vote_count
+  );
+  
+  // Додаємо логування для відстеження значень
+  useEffect(() => {
+    console.log(`MovieCard для ${movie.id} (${movie.title}):`, {
+      movieVoteCount: movie.vote_count,
+      movieDetailsVoteCount: movieDetails?.vote_count,
+      calculatedVoteCount: voteCount
+    });
+  }, [movie, movieDetails, voteCount]);
 
   // Обробник відкриття деталей фільму
   const handleOpenDetails = () => {
     if (movieDetails) {
       openMovieDetailsModal(movieDetails);
     }
+  };
+  
+  // Обробник додавання до списку перегляду
+  const handleAddToWatchlist = () => {
+    // Переконуємося, що передаємо всі необхідні дані, включаючи vote_count
+    const movieData = {
+      id: movie.id,
+      title: movie.title,
+      poster_path: movie.poster_path,
+      release_date: movie.release_date,
+      overview: movie.overview,
+      vote_average: voteAverage,
+      vote_count: voteCount // Гарантовано число після safeNumberConversion
+    };
+    
+    toggleWatchlist(movieData as any);
   };
 
   // Компактний варіант картки для списку фільмів актора
@@ -59,7 +97,7 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
             className="absolute top-2 right-2 bg-white/80 hover:bg-white p-1 rounded-full"
             onClick={(e) => {
               e.stopPropagation();
-              toggleWatchlist(movie as any);
+              handleAddToWatchlist();
             }}
           >
             {isInWatchlist(movie.id) ? (
@@ -106,7 +144,7 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
           className="absolute top-2 right-2 bg-white/80 hover:bg-white p-1.5 rounded-full"
           onClick={(e) => {
             e.stopPropagation();
-            toggleWatchlist(movie as any);
+            handleAddToWatchlist();
           }}
         >
           {isInWatchlist(movie.id) ? (
@@ -143,7 +181,7 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
           <Button
             variant={isInWatchlist(movie.id) ? "secondary" : "outline"}
             className={`w-full sm:flex-1 ${isInWatchlist(movie.id) ? "text-yellow-600" : ""}`}
-            onClick={() => toggleWatchlist(movie as any)}
+            onClick={handleAddToWatchlist}
           >
             {isInWatchlist(movie.id) ? (
               <>

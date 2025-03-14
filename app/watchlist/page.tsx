@@ -8,7 +8,14 @@ import { MovieCard } from '@/components/movie/movie-card';
 import { Button } from '@/components/ui/button';
 import { BookmarkX, Loader2, Search } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
-import { MoviesList } from '@/components/movie/movies-list';
+
+// Функція для безпечного перетворення значення на число
+function safeNumberConversion(value: any): number {
+  if (value === undefined || value === null) return 0;
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') return parseInt(value, 10) || 0;
+  return 0;
+}
 
 export default function WatchlistPage() {
   return (
@@ -27,6 +34,17 @@ function WatchlistContent() {
   const { watchlist, isLoading, refetch } = useWatchlist();
   const { user, isLoading: isAuthLoading } = useAuthStore();
   const router = useRouter();
+  
+  // Додаємо логування для перевірки даних, що надходять від сервера
+  useEffect(() => {
+    if (watchlist.length > 0) {
+      console.log("Отримані дані списку перегляду:", watchlist.map(item => ({
+        id: item.movie_id || item.id,
+        title: item.title,
+        vote_count: item.vote_count
+      })));
+    }
+  }, [watchlist]);
   
   // Ініціалізація стану аутентифікації при завантаженні сторінки
   useEffect(() => {
@@ -90,20 +108,25 @@ function WatchlistContent() {
         </div>
       ) : watchlist.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-          {watchlist.map((movie) => (
-            <MovieCard
-              key={movie.id || movie.movie_id}
-              movie={{
-                id: movie.movie_id || movie.id,
-                title: movie.title,
-                poster_path: movie.poster_path,
-                release_date: movie.release_date,
-                overview: movie.overview,
-                vote_average: movie.vote_average,
-                vote_count: movie.vote_count || 0
-              }}
-            />
-          ))}
+          {watchlist.map((movie) => {
+            // Явно перетворюємо vote_count на число
+            const voteCount = safeNumberConversion(movie.vote_count);
+            
+            return (
+              <MovieCard
+                key={movie.id || movie.movie_id}
+                movie={{
+                  id: movie.movie_id || movie.id,
+                  title: movie.title,
+                  poster_path: movie.poster_path,
+                  release_date: movie.release_date,
+                  overview: movie.overview,
+                  vote_average: movie.vote_average,
+                  vote_count: voteCount // Передаємо гарантовано число
+                }}
+              />
+            );
+          })}
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center py-12 space-y-4 px-4">

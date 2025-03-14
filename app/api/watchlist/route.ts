@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase';
 import { db } from '@/lib/db';
 import { emailWatchlistTable } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 
 // GET - Отримання списку перегляду для поточного користувача
 export async function GET(request: NextRequest) {
@@ -37,7 +37,14 @@ export async function GET(request: NextRequest) {
       .where(eq(emailWatchlistTable.userEmail, user.email.toLowerCase()))
       .orderBy(emailWatchlistTable.createdAt);
     
+    console.log("Дані зі списку перегляду з БД:", watchlist.map(item => ({
+      movie_id: item.movieId,
+      title: item.title,
+      vote_count: item.voteCount
+    })));
+    
     // Трансформуємо властивості для відповідності очікуванням фронтенду
+    // та переконуємося, що vote_count правильно передається
     const transformedWatchlist = watchlist.map(item => ({
       id: item.id,
       movie_id: item.movieId,
@@ -46,6 +53,10 @@ export async function GET(request: NextRequest) {
       release_date: item.releaseDate,
       overview: item.overview,
       vote_average: item.voteAverage,
+      // Явно передаємо vote_count як число
+      vote_count: item.voteCount !== null && item.voteCount !== undefined 
+        ? Number(item.voteCount) 
+        : 0,
       created_at: item.createdAt
     }));
     
@@ -97,6 +108,17 @@ export async function POST(request: NextRequest) {
       );
     }
     
+    console.log("Додавання фільму до списку перегляду:", { 
+      id: movie.id, 
+      title: movie.title, 
+      vote_count: movie.vote_count 
+    });
+    
+    // Переконуємося, що vote_count є числом
+    const voteCount = movie.vote_count !== undefined && movie.vote_count !== null
+      ? Number(movie.vote_count)
+      : 0;
+    
     // Додаємо фільм до списку перегляду
     await db.insert(emailWatchlistTable)
       .values({
@@ -107,6 +129,7 @@ export async function POST(request: NextRequest) {
         releaseDate: movie.release_date || null,
         overview: movie.overview || null,
         voteAverage: movie.vote_average || null,
+        voteCount: voteCount, // Зберігаємо як число
       })
       .onConflictDoUpdate({
         target: [emailWatchlistTable.movieId, emailWatchlistTable.userEmail],
@@ -116,6 +139,7 @@ export async function POST(request: NextRequest) {
           releaseDate: movie.release_date || null,
           overview: movie.overview || null,
           voteAverage: movie.vote_average || null,
+          voteCount: voteCount, // Оновлюємо vote_count при конфлікті
         }
       });
     

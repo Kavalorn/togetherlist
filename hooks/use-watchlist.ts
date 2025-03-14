@@ -4,7 +4,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { MovieDetails } from '@/lib/tmdb';
 import { useAuthStore } from '@/store/auth-store';
-import { useMovieDetails } from '@/hooks/use-movies'; // додаємо імпорт для отримання повних деталей фільму
+import { useMovieDetails } from '@/hooks/use-movies';
+
+// Функція для безпечного перетворення значення на число
+function safeNumberConversion(value: any): number {
+  if (value === undefined || value === null) return 0;
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') return parseInt(value, 10) || 0;
+  return 0;
+}
 
 // Функції для API запитів
 const fetchWatchlist = async (token: string | null = null): Promise<any[]> => {
@@ -20,11 +28,34 @@ const fetchWatchlist = async (token: string | null = null): Promise<any[]> => {
     throw new Error('Failed to fetch watchlist');
   }
   
-  return response.json();
+  const data = await response.json();
+  
+  // Логуємо отримані дані для перевірки наявності vote_count
+  console.log("Дані зі списку перегляду з API:", data.map((item: any) => ({
+    id: item.movie_id || item.id,
+    title: item.title,
+    vote_count: item.vote_count
+  })));
+  
+  // Переконуємося, що vote_count є числом
+  return data.map((item: any) => ({
+    ...item,
+    vote_count: safeNumberConversion(item.vote_count)
+  }));
 };
 
 const addToWatchlist = async (movie: MovieDetails, token: string | null = null) => {
   if (!token) throw new Error('Not authenticated');
+  
+  // Переконуємося, що vote_count має якесь значення, якщо воно відсутнє
+  const vote_count = safeNumberConversion(movie.vote_count);
+  
+  // Виведемо в консоль дані, які надсилаємо
+  console.log("Дані фільму, що надсилаються до API:", {
+    id: movie.id,
+    title: movie.title,
+    vote_count: vote_count
+  });
   
   const response = await fetch('/api/watchlist', {
     method: 'POST',
@@ -39,7 +70,7 @@ const addToWatchlist = async (movie: MovieDetails, token: string | null = null) 
       release_date: movie.release_date,
       overview: movie.overview,
       vote_average: movie.vote_average,
-      vote_count: movie.vote_count // Додаємо кількість голосів
+      vote_count: vote_count // Явно передаємо vote_count як число
     })
   });
   
@@ -114,24 +145,43 @@ export function useWatchlist() {
       removeMutation.mutate(movie.id);
     } else {
       try {
-        // Якщо vote_count відсутній, спробуємо отримати повні дані фільму
-        if (movie.vote_count === undefined || movie.vote_count === null) {
+        // Якщо vote_count відсутній або дорівнює 0, спробуємо отримати повні дані фільму
+        if (movie.vote_count === undefined || movie.vote_count === null || movie.vote_count === 0) {
+          console.log("Vote count відсутній або дорівнює 0, отримуємо повні дані фільму");
           const response = await fetch(`/api/movies/${movie.id}`);
           if (response.ok) {
             const fullMovieData = await response.json();
+            console.log("Отримані повні дані фільму:", { 
+              vote_count: fullMovieData.vote_count,
+              vote_average: fullMovieData.vote_average 
+            });
+            
             addMutation.mutate({
               ...movie,
-              vote_count: fullMovieData.vote_count || 0
+              vote_count: safeNumberConversion(fullMovieData.vote_count)
             });
             return;
           }
         }
+        
         // Якщо неможливо отримати додаткові дані або вони вже є
-        addMutation.mutate(movie);
+        console.log("Додаємо фільм з наявними даними:", { 
+          id: movie.id, 
+          title: movie.title, 
+          vote_count: movie.vote_count 
+        });
+        
+        addMutation.mutate({
+          ...movie,
+          vote_count: safeNumberConversion(movie.vote_count)
+        });
       } catch (error) {
         console.error('Помилка при отриманні повних даних фільму:', error);
         // Додаємо фільм як є, якщо сталася помилка
-        addMutation.mutate(movie);
+        addMutation.mutate({
+          ...movie,
+          vote_count: safeNumberConversion(movie.vote_count)
+        });
       }
     }
   };
