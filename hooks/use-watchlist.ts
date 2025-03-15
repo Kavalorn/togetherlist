@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { MovieDetails } from '@/lib/tmdb';
 import { useAuthStore } from '@/store/auth-store';
 import { useMovieDetails } from '@/hooks/use-movies';
+import { useWatchedMovies } from '@/hooks/use-watched-movies';
 
 // Функція для безпечного перетворення значення на число
 function safeNumberConversion(value: any): number {
@@ -29,13 +30,6 @@ const fetchWatchlist = async (token: string | null = null): Promise<any[]> => {
   }
   
   const data = await response.json();
-  
-  // Логуємо отримані дані для перевірки наявності vote_count
-  console.log("Дані зі списку перегляду з API:", data.map((item: any) => ({
-    id: item.movie_id || item.id,
-    title: item.title,
-    vote_count: item.vote_count
-  })));
   
   // Переконуємося, що vote_count є числом
   return data.map((item: any) => ({
@@ -103,6 +97,9 @@ export function useWatchlist() {
   const queryClient = useQueryClient();
   const token = useAuthStore(state => state.session?.access_token);
   const isAuthenticated = useAuthStore(state => !!state.session);
+  
+  // Отримуємо дані про переглянуті фільми
+  const { watchedMovies, isWatched } = useWatchedMovies();
   
   // Запит на отримання списку перегляду
   const watchlistQuery = useQuery({
@@ -189,8 +186,14 @@ export function useWatchlist() {
   // Отримання повних даних фільмів для списку перегляду
   const watchlistWithFullData = watchlistQuery.data || [];
   
+  // Фільтруємо список перегляду, виключаючи переглянуті фільми
+  const filteredWatchlist = watchlistWithFullData.filter(movie => {
+    const movieId = movie.movie_id || movie.id;
+    return !isWatched(movieId);
+  });
+  
   return {
-    watchlist: watchlistWithFullData,
+    watchlist: filteredWatchlist,
     isLoading: watchlistQuery.isLoading,
     isError: watchlistQuery.isError,
     error: watchlistQuery.error,

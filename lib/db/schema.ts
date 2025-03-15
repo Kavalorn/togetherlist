@@ -11,7 +11,7 @@ export const watchlistTable = pgTable('watchlist', {
   releaseDate: text('release_date'),
   overview: text('overview'),
   voteAverage: real('vote_average'),
-  voteCount: integer('vote_count'), // Додаємо поле для кількості голосів
+  voteCount: integer('vote_count'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow()
 }, (table) => {
   return {
@@ -34,7 +34,7 @@ export const friendsTable = pgTable('friends', {
   }
 });
 
-
+// Схема для watchlist на основі email
 export const emailWatchlistTable = pgTable('email_watchlist', {
   id: serial('id').primaryKey(),
   userEmail: text('user_email').notNull(),
@@ -44,11 +44,31 @@ export const emailWatchlistTable = pgTable('email_watchlist', {
   releaseDate: text('release_date'),
   overview: text('overview'),
   voteAverage: real('vote_average'),
-  voteCount: integer('vote_count'), // Додаємо поле для кількості голосів
+  voteCount: integer('vote_count'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow()
 }, (table) => {
   return {
     movieIdIdx: uniqueIndex('email_movie_id_idx').on(table.movieId, table.userEmail),
+  }
+});
+
+// Нова схема для переглянутих фільмів
+export const watchedMoviesTable = pgTable('watched_movies', {
+  id: serial('id').primaryKey(),
+  userEmail: text('user_email').notNull(),
+  movieId: integer('movie_id').notNull(),
+  title: text('title').notNull(),
+  posterPath: text('poster_path'),
+  releaseDate: text('release_date'),
+  overview: text('overview'),
+  voteAverage: real('vote_average'),
+  voteCount: integer('vote_count'),
+  watchedAt: timestamp('watched_at', { withTimezone: true }).defaultNow(),
+  comment: text('comment'), // Опціональний коментар
+  rating: real('rating') // Опціональна оцінка користувача
+}, (table) => {
+  return {
+    movieIdIdx: uniqueIndex('watched_movie_id_user_idx').on(table.movieId, table.userEmail),
   }
 });
 
@@ -61,3 +81,6 @@ export type NewFriend = typeof friendsTable.$inferInsert;
 
 export type EmailWatchlist = typeof emailWatchlistTable.$inferSelect;
 export type NewEmailWatchlistEntry = typeof emailWatchlistTable.$inferInsert;
+
+export type WatchedMovie = typeof watchedMoviesTable.$inferSelect;
+export type NewWatchedMovie = typeof watchedMoviesTable.$inferInsert;

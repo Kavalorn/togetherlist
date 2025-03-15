@@ -1,3 +1,4 @@
+// components/movie/movie-details-modal.tsx
 'use client';
 
 import Image from 'next/image';
@@ -7,9 +8,16 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUIStore } from '@/store/ui-store';
 import { useWatchlist } from '@/hooks/use-watchlist';
+import { useWatchedMovies } from '@/hooks/use-watched-movies';
 import { useMovieCredits, useMovieImages } from '@/hooks/use-movies';
-import { Bookmark, BookmarkCheck, Star, X, Calendar, Clock, Users } from 'lucide-react';
+import { 
+  Bookmark, BookmarkCheck, Star, Calendar, Clock, 
+  Eye, EyeOff, Users, Loader2 
+} from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { useEffect } from 'react';
 
 // Функція для безпечного перетворення значення на число
 function safeNumberConversion(value: any): number {
@@ -22,10 +30,15 @@ function safeNumberConversion(value: any): number {
 export function MovieDetailsModal() {
   const { isMovieDetailsModalOpen, selectedMovie, closeMovieDetailsModal } = useUIStore();
   const { isInWatchlist, toggleWatchlist } = useWatchlist();
+  const { isWatched, markAsWatched, removeFromWatched } = useWatchedMovies();
 
   // Отримання додаткових даних про фільм (актори, зображення)
   const { data: creditsData, isLoading: isLoadingCredits } = useMovieCredits(selectedMovie?.id || null);
   const { data: imagesData, isLoading: isLoadingImages } = useMovieImages(selectedMovie?.id || null);
+  
+  // Отримання списку друзів, які переглянули фільм
+  const { data: friendsWhoWatched, isLoading: isLoadingFriends } = 
+    useWatchedMovies().getFriendsWhoWatched(selectedMovie?.id || 0);
 
   // Якщо фільм не вибрано, не відображаємо модальне вікно
   if (!selectedMovie) {
@@ -37,14 +50,9 @@ export function MovieDetailsModal() {
   const formattedRating = selectedMovie.vote_average
     ? `${(selectedMovie.vote_average).toFixed(1)}/10 (${voteCount} ${voteCount === 1 ? 'голос' : 'голосів'})`
     : 'Немає оцінки';
-
-  // Логуємо для відлагодження
-  console.log("Деталі фільму в модальному вікні:", {
-    id: selectedMovie.id,
-    title: selectedMovie.title,
-    vote_count: selectedMovie.vote_count,
-    formattedVoteCount: voteCount
-  });
+    
+  // Перевіряємо чи фільм переглянуто
+  const movieWatched = isWatched(selectedMovie.id);
 
   // Функція для додавання до списку перегляду
   const handleAddToWatchlist = () => {
@@ -53,6 +61,25 @@ export function MovieDetailsModal() {
       ...selectedMovie,
       vote_count: voteCount
     });
+  };
+  
+  // Обробник позначення фільму як переглянутого
+  const handleMarkAsWatched = () => {
+    if (movieWatched) {
+      removeFromWatched(selectedMovie.id);
+    } else {
+      const movieData = {
+        id: selectedMovie.id,
+        title: selectedMovie.title,
+        poster_path: selectedMovie.poster_path,
+        release_date: selectedMovie.release_date,
+        overview: selectedMovie.overview,
+        vote_average: selectedMovie.vote_average,
+        vote_count: voteCount
+      };
+      
+      markAsWatched({ movie: movieData });
+    }
   };
 
   return (
@@ -84,12 +111,20 @@ export function MovieDetailsModal() {
           )}
 
           <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
+          
+          {/* Індикатор переглянутого фільму */}
+          {movieWatched && (
+            <div className="absolute top-4 right-4 bg-blue-500/80 text-white px-3 py-1 rounded-full flex items-center gap-2">
+              <Eye className="h-4 w-4" />
+              <span>Переглянуто</span>
+            </div>
+          )}
         </div>
 
         <div className="relative p-4 sm:p-6 pt-0 mt-[-3rem]">
           <div className="flex flex-col md:flex-row gap-6">
             <div className="md:w-1/3 flex-shrink-0">
-              <div className="relative aspect-[2/3] w-48 max-w-full mx-auto md:mx-0 -mt-16 sm:-mt-20 md:-mt-24 shadow-xl rounded-lg overflow-hidden border">
+              <div className={`relative aspect-[2/3] w-48 max-w-full mx-auto md:mx-0 -mt-16 sm:-mt-20 md:-mt-24 shadow-xl rounded-lg overflow-hidden border ${movieWatched ? 'opacity-80' : ''}`}>
                 {selectedMovie.poster_path ? (
                   <Image
                     src={`https://image.tmdb.org/t/p/w500${selectedMovie.poster_path}`}
@@ -103,9 +138,38 @@ export function MovieDetailsModal() {
                     <span className="text-muted-foreground text-sm">Постер відсутній</span>
                   </div>
                 )}
+                
+                {/* Оверлей для переглянутих фільмів */}
+                {movieWatched && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-blue-500/20">
+                    <div className="bg-blue-500/70 p-3 rounded-full">
+                      <Eye className="h-8 w-8 text-white" />
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <div className="mt-4 flex flex-col gap-2">
+              <div className="mt-4 space-y-2">
+                <div className="flex gap-2">
+                  <Button
+                    variant={movieWatched ? "default" : "outline"}
+                    className={`flex-1 ${movieWatched ? "bg-blue-600 hover:bg-blue-700" : ""}`}
+                    onClick={handleMarkAsWatched}
+                  >
+                    {movieWatched ? (
+                      <>
+                        <EyeOff className="mr-2 h-5 w-5" />
+                        Непереглянуто
+                      </>
+                    ) : (
+                      <>
+                        <Eye className="mr-2 h-5 w-5" />
+                        Переглянуто
+                      </>
+                    )}
+                  </Button>
+                </div>
+                
                 <Button
                   variant={isInWatchlist(selectedMovie.id) ? "default" : "outline"}
                   className={`w-full ${isInWatchlist(selectedMovie.id) ? "bg-yellow-600 hover:bg-yellow-700" : ""}`}
@@ -143,12 +207,57 @@ export function MovieDetailsModal() {
                     </div>
                   )}
                 </div>
+                
+                {/* Секція друзів, які переглянули фільм */}
+                <div className="mt-6">
+                  <h3 className="font-medium mb-2 flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    Хто з друзів дивився
+                  </h3>
+                  
+                  {isLoadingFriends ? (
+                    <div className="flex items-center justify-center py-4">
+                      <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                      <span className="text-sm text-muted-foreground">Завантаження...</span>
+                    </div>
+                  ) : friendsWhoWatched && friendsWhoWatched.length > 0 ? (
+                    <div className="space-y-2">
+                      {friendsWhoWatched.map((friend: any, index: number) => (
+                        <div key={index} className="flex items-center gap-2 p-2 rounded-md bg-muted">
+                          <Avatar className="h-6 w-6">
+                            <AvatarFallback>
+                              {friend.display_name.substring(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{friend.display_name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {friend.watched_at && format(new Date(friend.watched_at), 'dd MMM yyyy')}
+                            </p>
+                          </div>
+                          {friend.rating && (
+                            <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                              {friend.rating}/10
+                            </Badge>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground py-2">
+                      Ще ніхто з друзів не дивився цей фільм
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 
             <div className="md:w-2/3 mt-4 md:mt-0">
               <DialogHeader className="mb-4 text-left">
-                <DialogTitle className="text-xl sm:text-2xl md:text-3xl font-bold">{selectedMovie.title}</DialogTitle>
+                <DialogTitle className="text-xl sm:text-2xl md:text-3xl font-bold flex items-center gap-2">
+                  {selectedMovie.title}
+                  {movieWatched && <Eye className="h-6 w-6 text-blue-500" />}
+                </DialogTitle>
                 {selectedMovie.tagline && (
                   <p className="text-muted-foreground italic">{selectedMovie.tagline}</p>
                 )}

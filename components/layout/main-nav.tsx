@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Search, BookmarkIcon, Film, Users, Menu, X, Shuffle } from 'lucide-react';
+import { Search, BookmarkIcon, Film, Users, Menu, X, Shuffle, Archive, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
@@ -62,6 +62,13 @@ export function MainNav() {
       label: "Список перегляду",
       icon: <BookmarkIcon className="h-4 w-4 mr-2" />,
       isActive: pathname === "/watchlist"
+    },
+    {
+      href: "/archive",
+      label: "Архів",
+      icon: <Eye className="h-4 w-4 mr-2" />,
+      isActive: pathname === "/archive",
+      requireAuth: true
     },
     {
       href: "/friends",
@@ -214,11 +221,24 @@ export function MainNav() {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
+                  <Link href="/watchlist" className="cursor-pointer">
+                    <BookmarkIcon className="h-4 w-4 mr-2" />
+                    Список перегляду
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/archive" className="cursor-pointer">
+                    <Eye className="h-4 w-4 mr-2" />
+                    Архів переглянутих
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
                   <Link href="/friends" className="cursor-pointer">
                     <Users className="h-4 w-4 mr-2" />
                     Мої друзі
                   </Link>
                 </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem
                   className="cursor-pointer"
                   onClick={() => logout()}

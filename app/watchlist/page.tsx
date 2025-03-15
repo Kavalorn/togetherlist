@@ -1,13 +1,16 @@
+// app/watchlist/page.tsx (оновлення для відображення інформації про фільтрацію)
 'use client';
 
 import { useEffect, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { useWatchlist } from '@/hooks/use-watchlist';
+import { useWatchedMovies } from '@/hooks/use-watched-movies';
 import { useAuthStore } from '@/store/auth-store';
 import { MovieCard } from '@/components/movie/movie-card';
 import { Button } from '@/components/ui/button';
-import { BookmarkX, Loader2, Search } from 'lucide-react';
+import { BookmarkX, Loader2, Search, Info, Archive } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 // Функція для безпечного перетворення значення на число
 function safeNumberConversion(value: any): number {
@@ -32,19 +35,9 @@ export default function WatchlistPage() {
 
 function WatchlistContent() {
   const { watchlist, isLoading, refetch } = useWatchlist();
+  const { watchedMovies } = useWatchedMovies();
   const { user, isLoading: isAuthLoading } = useAuthStore();
   const router = useRouter();
-  
-  // Додаємо логування для перевірки даних, що надходять від сервера
-  useEffect(() => {
-    if (watchlist.length > 0) {
-      console.log("Отримані дані списку перегляду:", watchlist.map(item => ({
-        id: item.movie_id || item.id,
-        title: item.title,
-        vote_count: item.vote_count
-      })));
-    }
-  }, [watchlist]);
   
   // Ініціалізація стану аутентифікації при завантаженні сторінки
   useEffect(() => {
@@ -94,10 +87,16 @@ function WatchlistContent() {
           </p>
         </div>
         
-        <Button onClick={() => router.push('/')} variant="outline" className="sm:ml-auto w-full sm:w-auto">
-          <Search className="mr-2 h-4 w-4" />
-          Шукати фільми
-        </Button>
+        <div className="flex flex-col sm:flex-row items-center gap-2 sm:ml-auto w-full sm:w-auto">
+          <Button onClick={() => router.push('/archive')} variant="outline" className="w-full sm:w-auto">
+            <Archive className="mr-2 h-4 w-4" />
+            Архів
+          </Button>
+          <Button onClick={() => router.push('/')} variant="default" className="w-full sm:w-auto">
+            <Search className="mr-2 h-4 w-4" />
+            Шукати фільми
+          </Button>
+        </div>
       </div>
       
       <Separator />
@@ -135,10 +134,16 @@ function WatchlistContent() {
           <p className="text-muted-foreground max-w-md text-center">
             Додавайте фільми до списку перегляду, щоб швидко повернутися до них пізніше
           </p>
-          <Button onClick={() => router.push('/')} variant="default" className="mt-4">
-            <Search className="mr-2 h-4 w-4" />
-            Шукати фільми
-          </Button>
+          <div className="flex flex-col sm:flex-row items-center gap-2 mt-4">
+            <Button onClick={() => router.push('/archive')} variant="outline">
+              <Archive className="mr-2 h-4 w-4" />
+              Переглянуті фільми ({watchedMovies.length})
+            </Button>
+            <Button onClick={() => router.push('/')} variant="default">
+              <Search className="mr-2 h-4 w-4" />
+              Шукати фільми
+            </Button>
+          </div>
         </div>
       )}
     </div>
