@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Star, Info, Bookmark, BookmarkCheck, Eye, EyeOff } from 'lucide-react';
+import { Star, Info, Bookmark, BookmarkCheck, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { Movie } from '@/lib/tmdb';
 import { useWatchlist } from '@/hooks/use-watchlist';
 import { useWatchedMovies } from '@/hooks/use-watched-movies';
@@ -13,6 +13,7 @@ import { useUIStore } from '@/store/ui-store';
 import { useMovieDetails } from '@/hooks/use-movies';
 import { format } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { toast } from 'sonner';
 
 // Функція для безпечного перетворення значення на число
 function safeNumberConversion(value: any): number {
@@ -29,10 +30,12 @@ interface MovieCardProps {
 
 export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
   const { isInWatchlist, toggleWatchlist } = useWatchlist();
-  const { isWatched, markAsWatched, removeFromWatched } = useWatchedMovies();
+  const { isWatched, markAsWatched, removeFromWatched, isRemoving, isMarking } = useWatchedMovies();
   const { openMovieDetailsModal } = useUIStore();
   const { data: movieDetails } = useMovieDetails(movie.id);
   const [imageError, setImageError] = useState(false);
+  const [isRemovingLocal, setIsRemovingLocal] = useState(false);
+  const [isAddingLocal, setIsAddingLocal] = useState(false);
 
   // Забезпечуємо, що у нас є значення рейтингу та кількості голосів
   const voteAverage = movie.vote_average !== undefined ? movie.vote_average : movieDetails?.vote_average || 0;
@@ -70,22 +73,58 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
     toggleWatchlist(movieData as any);
   };
   
-  // Обробник позначення фільму як переглянутого
-  const handleMarkAsWatched = () => {
+  // Обробник видалення фільму зі списку переглянутих
+  const handleRemoveFromWatched = () => {
+    setIsRemovingLocal(true);
+    
+    // Тут викликаємо функцію removeFromWatched з TanStack Query
+    // зі специфічними опціями onSuccess та onError
+    removeFromWatched(movie.id, {
+      onSuccess: () => {
+        toast.success(`"${movie.title}" прибрано з переглянутих фільмів`);
+        setIsRemovingLocal(false);
+      },
+      onError: (error: any) => {
+        toast.error(`Помилка: ${error.message || 'Не вдалося видалити фільм'}`);
+        setIsRemovingLocal(false);
+      }
+    });
+  };
+  
+  // Обробник додавання фільму до списку переглянутих
+  const handleAddToWatched = () => {
+    setIsAddingLocal(true);
+    
+    const movieData = {
+      id: movie.id,
+      title: movie.title,
+      poster_path: movie.poster_path,
+      release_date: movie.release_date,
+      overview: movie.overview,
+      vote_average: voteAverage,
+      vote_count: voteCount
+    };
+    
+    markAsWatched({ movie: movieData as any }, {
+      onSuccess: () => {
+        toast.success(`"${movie.title}" позначено як переглянутий`);
+        setIsAddingLocal(false);
+      },
+      onError: (error: any) => {
+        toast.error(`Помилка: ${error.message || 'Не вдалося додати фільм'}`);
+        setIsAddingLocal(false);
+      }
+    });
+  };
+  
+  // Обробник для кнопки зміни статусу перегляду (око)
+  const handleToggleWatched = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
     if (movieWatched) {
-      removeFromWatched(movie.id);
+      handleRemoveFromWatched();
     } else {
-      const movieData = {
-        id: movie.id,
-        title: movie.title,
-        poster_path: movie.poster_path,
-        release_date: movie.release_date,
-        overview: movie.overview,
-        vote_average: voteAverage,
-        vote_count: voteCount
-      };
-      
-      markAsWatched({ movie: movieData as any });
+      handleAddToWatched();
     }
   };
 
@@ -121,12 +160,12 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
                       ? 'bg-blue-500 hover:bg-blue-600 text-white' 
                       : 'bg-white/80 hover:bg-white text-gray-600 hover:text-gray-800'
                   }`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleMarkAsWatched();
-                  }}
+                  onClick={handleToggleWatched}
+                  disabled={isRemovingLocal || isAddingLocal}
                 >
-                  {movieWatched ? (
+                  {isRemovingLocal || isAddingLocal ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : movieWatched ? (
                     <Eye className="h-5 w-5" />
                   ) : (
                     <EyeOff className="h-5 w-5" />
@@ -251,12 +290,12 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
                     ? 'bg-blue-500 hover:bg-blue-600 text-white' 
                     : 'bg-white/80 hover:bg-white text-gray-600 hover:text-gray-800'
                 }`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleMarkAsWatched();
-                }}
+                onClick={handleToggleWatched}
+                disabled={isRemovingLocal || isAddingLocal}
               >
-                {movieWatched ? (
+                {isRemovingLocal || isAddingLocal ? (
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                ) : movieWatched ? (
                   <Eye className="h-6 w-6" />
                 ) : (
                   <EyeOff className="h-6 w-6" />

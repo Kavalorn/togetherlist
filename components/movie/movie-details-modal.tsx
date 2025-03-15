@@ -17,7 +17,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { useEffect } from 'react';
+import { toast } from 'sonner';
 
 // Функція для безпечного перетворення значення на число
 function safeNumberConversion(value: any): number {
@@ -30,7 +30,7 @@ function safeNumberConversion(value: any): number {
 export function MovieDetailsModal() {
   const { isMovieDetailsModalOpen, selectedMovie, closeMovieDetailsModal } = useUIStore();
   const { isInWatchlist, toggleWatchlist } = useWatchlist();
-  const { isWatched, markAsWatched, removeFromWatched } = useWatchedMovies();
+  const { isWatched, markAsWatched, removeFromWatched, isMarking, isRemoving } = useWatchedMovies();
 
   // Отримання додаткових даних про фільм (актори, зображення)
   const { data: creditsData, isLoading: isLoadingCredits } = useMovieCredits(selectedMovie?.id || null);
@@ -61,13 +61,29 @@ export function MovieDetailsModal() {
       ...selectedMovie,
       vote_count: voteCount
     });
+
+    // Відображаємо повідомлення про успішне додавання/видалення
+    if (isInWatchlist(selectedMovie.id)) {
+      toast.success(`"${selectedMovie.title}" прибрано зі списку перегляду`);
+    } else {
+      toast.success(`"${selectedMovie.title}" додано до списку перегляду`);
+    }
   };
   
   // Обробник позначення фільму як переглянутого
   const handleMarkAsWatched = () => {
     if (movieWatched) {
-      removeFromWatched(selectedMovie.id);
+      // Видаляємо з переглянутих
+      removeFromWatched(selectedMovie.id, {
+        onSuccess: () => {
+          toast.success(`"${selectedMovie.title}" прибрано з переглянутих фільмів`);
+        },
+        onError: (error: Error) => {
+          toast.error(`Помилка: ${error.message}`);
+        }
+      });
     } else {
+      // Позначаємо як переглянутий
       const movieData = {
         id: selectedMovie.id,
         title: selectedMovie.title,
@@ -78,7 +94,14 @@ export function MovieDetailsModal() {
         vote_count: voteCount
       };
       
-      markAsWatched({ movie: movieData });
+      markAsWatched({ movie: movieData }, {
+        onSuccess: () => {
+          toast.success(`"${selectedMovie.title}" позначено як переглянутий`);
+        },
+        onError: (error: Error) => {
+          toast.error(`Помилка: ${error.message}`);
+        }
+      });
     }
   };
 
@@ -155,8 +178,14 @@ export function MovieDetailsModal() {
                     variant={movieWatched ? "default" : "outline"}
                     className={`flex-1 ${movieWatched ? "bg-blue-600 hover:bg-blue-700" : ""}`}
                     onClick={handleMarkAsWatched}
+                    disabled={isMarking || isRemoving}
                   >
-                    {movieWatched ? (
+                    {isMarking || isRemoving ? (
+                      <>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        {movieWatched ? "Видаляємо..." : "Зберігаємо..."}
+                      </>
+                    ) : movieWatched ? (
                       <>
                         <EyeOff className="mr-2 h-5 w-5" />
                         Непереглянуто
@@ -372,5 +401,5 @@ export function MovieDetailsModal() {
         </div>
       </DialogContent>
     </Dialog>
-  );
-}
+  )
+};
