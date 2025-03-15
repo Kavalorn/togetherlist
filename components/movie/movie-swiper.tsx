@@ -454,25 +454,6 @@ export function MovieSwiper() {
           </Button>
         </div>
 
-        {/* Кнопка швидкого перемикання статусу перегляду */}
-        <div className="fixed top-20 left-4 z-50">
-          <Button 
-            variant="default" 
-            size="icon" 
-            className={`rounded-full shadow-lg ${movieWatched ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-500/70 hover:bg-gray-600'} text-white border-0`}
-            onClick={handleToggleWatched}
-            disabled={isMarkingWatched}
-          >
-            {isMarkingWatched ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : movieWatched ? (
-              <EyeOff className="h-5 w-5" />
-            ) : (
-              <Eye className="h-5 w-5" />
-            )}
-          </Button>
-        </div>
-
         <div className="relative w-full max-w-md mx-auto px-4 pt-2 flex-1 flex flex-col h-full">
           <div 
             className="relative w-full flex-grow"
