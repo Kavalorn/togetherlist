@@ -12,12 +12,16 @@ import { useWatchedMovies } from '@/hooks/use-watched-movies';
 import { useMovieCredits, useMovieImages } from '@/hooks/use-movies';
 import { 
   Bookmark, BookmarkCheck, Star, Calendar, Clock, 
-  Eye, EyeOff, Users, Loader2 
+  Eye, EyeOff, Users, Loader2, 
+  Film
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { MovieTrailer } from './movie-trailer';
+import { useState } from 'react';
+import { useMovieTrailer } from '@/hooks/use-movie-trailer';
 
 // Функція для безпечного перетворення значення на число
 function safeNumberConversion(value: any): number {
@@ -31,10 +35,13 @@ export function MovieDetailsModal() {
   const { isMovieDetailsModalOpen, selectedMovie, closeMovieDetailsModal } = useUIStore();
   const { isInWatchlist, toggleWatchlist } = useWatchlist();
   const { isWatched, markAsWatched, removeFromWatched, isMarking, isRemoving } = useWatchedMovies();
+  const [trailerOpen, setTrailerOpen] = useState(false);
 
   // Отримання додаткових даних про фільм (актори, зображення)
   const { data: creditsData, isLoading: isLoadingCredits } = useMovieCredits(selectedMovie?.id || null);
   const { data: imagesData, isLoading: isLoadingImages } = useMovieImages(selectedMovie?.id || null);
+
+  const { hasTrailer, isLoading: isCheckingTrailer } = useMovieTrailer(selectedMovie?.id || null);
   
   // Отримання списку друзів, які переглянули фільм
   const { data: friendsWhoWatched, isLoading: isLoadingFriends } = 
@@ -216,6 +223,20 @@ export function MovieDetailsModal() {
                     </>
                   )}
                 </Button>
+
+                <Button
+  variant="secondary"
+  className="w-full"
+  onClick={() => setTrailerOpen(true)}
+  disabled={!hasTrailer || isCheckingTrailer}
+>
+  {isCheckingTrailer ? (
+    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+  ) : (
+    <Film className="mr-2 h-5 w-5" />
+  )}
+  {hasTrailer ? "Дивитися трейлер" : "Трейлер відсутній"}
+</Button>
 
                 <div className="mt-4 space-y-2">
                   <div className="flex items-center gap-2 text-sm">
@@ -400,6 +421,11 @@ export function MovieDetailsModal() {
           </div>
         </div>
       </DialogContent>
+      <MovieTrailer 
+  movieId={selectedMovie.id}
+  isOpen={trailerOpen}
+  onClose={() => setTrailerOpen(false)}
+/>
     </Dialog>
   )
 };

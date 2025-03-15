@@ -100,6 +100,22 @@ export interface PersonMovieCredits {
   crew: CrewMovie[]; // Використовуємо CrewMovie замість Movie & {...}
 }
 
+export interface MovieVideo {
+  id: string;
+  key: string;
+  name: string;
+  site: string;
+  size: number;
+  type: string;
+  official: boolean;
+  published_at: string;
+}
+
+export interface MovieVideos {
+  id: number;
+  results: MovieVideo[];
+}
+
 // Інтерфейс для фільтрів
 interface RandomMovieFilters {
   minRating?: number;
@@ -233,6 +249,10 @@ export const tmdbApi = {
     
     return result;
   },
+
+  // Отримання відео фільму (трейлери)
+  getMovieVideos: (id: number) =>
+    fetchFromTMDB<MovieVideos>(`/movie/${id}/videos`, {...showLanguage}),
 
   // Отримання фільмів у прокаті
   getNowPlayingMovies: (page = 1) =>

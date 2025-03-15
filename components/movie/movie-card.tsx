@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Star, Info, Bookmark, BookmarkCheck, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Star, Info, Bookmark, BookmarkCheck, Eye, EyeOff, Loader2, Film } from 'lucide-react';
 import { Movie } from '@/lib/tmdb';
 import { useWatchlist } from '@/hooks/use-watchlist';
 import { useWatchedMovies } from '@/hooks/use-watched-movies';
@@ -14,6 +14,8 @@ import { useMovieDetails } from '@/hooks/use-movies';
 import { format } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
+import { MovieTrailer } from './movie-trailer';
+import { useMovieTrailer } from '@/hooks/use-movie-trailer';
 
 // Функція для безпечного перетворення значення на число
 function safeNumberConversion(value: any): number {
@@ -36,6 +38,8 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
   const [imageError, setImageError] = useState(false);
   const [isRemovingLocal, setIsRemovingLocal] = useState(false);
   const [isAddingLocal, setIsAddingLocal] = useState(false);
+  const [trailerOpen, setTrailerOpen] = useState(false);
+  const { hasTrailer, isLoading: isCheckingTrailer } = useMovieTrailer(movie.id);
 
   // Забезпечуємо, що у нас є значення рейтингу та кількості голосів
   const voteAverage = movie.vote_average !== undefined ? movie.vote_average : movieDetails?.vote_average || 0;
@@ -206,6 +210,37 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
                 {isInWatchlist(movie.id) ? "Прибрати зі списку" : "Додати до списку"}
               </TooltipContent>
             </Tooltip>
+
+              {/* Кнопка трейлера */}
+              <Tooltip>
+    <TooltipTrigger asChild>
+      <Button
+        variant="ghost"
+        size="icon"
+        className={`absolute bottom-2 right-2 p-1.5 rounded-full ${
+          hasTrailer 
+            ? 'bg-white/80 hover:bg-white text-gray-600 hover:text-gray-800' 
+            : 'bg-gray-400/50 text-gray-500 cursor-not-allowed'
+        }`}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (hasTrailer) {
+            setTrailerOpen(true);
+          }
+        }}
+        disabled={!hasTrailer || isCheckingTrailer}
+      >
+        {isCheckingTrailer ? (
+          <Loader2 className="h-5 w-5 animate-spin" />
+        ) : (
+          <Film className="h-5 w-5" />
+        )}
+      </Button>
+    </TooltipTrigger>
+    <TooltipContent>
+      {hasTrailer ? "Дивитися трейлер" : "Трейлер відсутній"}
+    </TooltipContent>
+  </Tooltip>
           </TooltipProvider>
           
           {movieWatched && (
@@ -332,15 +367,38 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
           </p>
         </CardContent>
         <CardFooter className="p-4 pt-0 flex flex-col sm:flex-row gap-2">
-          <Button
-            variant="default"
-            className="w-full"
-            onClick={handleOpenDetails}
-          >
-            <Info className="mr-2 h-4 w-4" />
-            Деталі
-          </Button>
-        </CardFooter>
+  <Button
+    variant="default"
+    className="w-full sm:flex-1"
+    onClick={handleOpenDetails}
+  >
+    <Info className="mr-2 h-4 w-4" />
+    Деталі
+  </Button>
+  <Button
+  variant="secondary"
+  className="w-full sm:flex-1"
+  onClick={(e) => {
+    e.stopPropagation();
+    if (hasTrailer) {
+      setTrailerOpen(true);
+    }
+  }}
+  disabled={!hasTrailer || isCheckingTrailer}
+>
+  {isCheckingTrailer ? (
+    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+  ) : (
+    <Film className="mr-2 h-4 w-4" />
+  )}
+  {hasTrailer ? "Трейлер" : "Немає трейлера"}
+</Button>
+</CardFooter>
+        <MovieTrailer 
+          movieId={movie.id}
+          isOpen={trailerOpen}
+          onClose={() => setTrailerOpen(false)}
+        />
       </div>
     </Card>
   );

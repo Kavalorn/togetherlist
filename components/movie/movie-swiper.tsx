@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { useSpring, animated } from '@react-spring/web';
 import { useDrag } from '@use-gesture/react';
 import { Button } from '@/components/ui/button';
-import { Star, ThumbsDown, ThumbsUp, Info, Loader2, Filter, Eye, EyeOff } from 'lucide-react';
+import { Star, ThumbsDown, ThumbsUp, Info, Loader2, Filter, Eye, EyeOff, Film } from 'lucide-react';
 import { useMovieDetails } from '@/hooks/use-movies';
 import { useWatchlist } from '@/hooks/use-watchlist';
 import { useWatchedMovies } from '@/hooks/use-watched-movies';
@@ -16,11 +16,11 @@ import { Movie, MovieDetails } from '@/lib/tmdb';
 import { Card } from '../ui/card';
 import { toast } from 'sonner';
 import { tmdbApi } from '@/lib/tmdb';
-import { 
-  Sheet, 
-  SheetContent, 
-  SheetHeader, 
-  SheetTitle, 
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
   SheetDescription,
   SheetFooter,
   SheetClose
@@ -29,6 +29,8 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { MovieTrailer } from './movie-trailer';
+import { useMovieTrailer } from '@/hooks/use-movie-trailer';
 
 // Функція для безпечного перетворення значення на число
 function safeNumberConversion(value: any): number {
@@ -71,6 +73,8 @@ export function MovieSwiper() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const currentYear = new Date().getFullYear();
   const [isMarkingWatched, setIsMarkingWatched] = useState(false);
+  const [trailerOpen, setTrailerOpen] = useState(false);
+  const { hasTrailer, isLoading: isCheckingTrailer } = useMovieTrailer(currentMovie?.id || null);
 
   // Початкові значення фільтрів з localStorage або за замовчуванням
   const [filters, setFilters] = useState<MovieFilters>(() => {
@@ -106,10 +110,10 @@ export function MovieSwiper() {
 
   // Отримуємо деталі поточного фільму
   const { data: movieDetails } = useMovieDetails(currentMovie?.id || null);
-  
+
   // Перевіряємо чи фільм переглянуто
   const movieWatched = isWatched(currentMovie?.id || 0);
-  
+
   // Відстежуємо зміни статусу перегляду
   useEffect(() => {
     if (currentMovie) {
@@ -121,18 +125,18 @@ export function MovieSwiper() {
   // Оновлюємо розмір вікна при завантаженні та зміні розміру
   useEffect(() => {
     const updateWindowSize = () => {
-      setWindowSize({ 
-        width: window.innerWidth, 
-        height: window.innerHeight 
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight
       });
     };
-    
+
     // Ініціалізація при завантаженні
     updateWindowSize();
-    
+
     // Слухаємо зміни розміру вікна
     window.addEventListener('resize', updateWindowSize);
-    
+
     return () => {
       window.removeEventListener('resize', updateWindowSize);
     };
@@ -153,7 +157,7 @@ export function MovieSwiper() {
         genre: filters.genre
       });
       setCurrentMovie(movie);
-      
+
       // Логуємо для відлагодження
       console.log("Завантажено випадковий фільм:", {
         id: movie.id,
@@ -177,9 +181,9 @@ export function MovieSwiper() {
   // Обробник для кнопки переглянуто/не переглянуто
   const handleToggleWatched = () => {
     if (!currentMovie) return;
-    
+
     setIsMarkingWatched(true);
-    
+
     const movieData = {
       id: currentMovie.id,
       title: currentMovie.title,
@@ -189,7 +193,7 @@ export function MovieSwiper() {
       vote_average: currentMovie.vote_average,
       vote_count: safeNumberConversion(currentMovie.vote_count)
     };
-    
+
     if (movieWatched) {
       // Видаляємо з переглянутих
       removeFromWatched(currentMovie.id, {
@@ -230,7 +234,7 @@ export function MovieSwiper() {
   const bind = useDrag(({ active, movement: [mx], direction: [xDir], velocity: [vx] }) => {
     // Розраховуємо поворот на основі відстані переміщення
     const rot = mx / 100;
-    
+
     // Показуємо, куди зараз свайпається (лайк/дизлайк)
     if (mx > 50) {
       setDirection('right');
@@ -239,18 +243,18 @@ export function MovieSwiper() {
     } else {
       setDirection(null);
     }
-    
+
     if (!active && Math.abs(mx) > 100) {
       // Свайп завершено і перевищено поріг
       setGone(true);
-      
+
       // Анімуємо картку, щоб вона "вилетіла" з екрану
-      api.start({ 
-        x: (200 + windowSize.width) * (mx > 0 ? 1 : -1), 
-        rotation: rot * 10, 
-        config: { friction: 50, tension: 200 } 
+      api.start({
+        x: (200 + windowSize.width) * (mx > 0 ? 1 : -1),
+        rotation: rot * 10,
+        config: { friction: 50, tension: 200 }
       });
-      
+
       if (mx > 0) {
         // Свайп вправо (лайк)
         handleLike();
@@ -258,7 +262,7 @@ export function MovieSwiper() {
         // Свайп вліво (дизлайк)
         handleDislike();
       }
-      
+
       // Затримка перед показом наступної картки
       setTimeout(() => {
         setGone(false);
@@ -271,11 +275,11 @@ export function MovieSwiper() {
       setDirection(null);
     } else {
       // Оновлюємо позицію та поворот картки під час свайпу
-      api.start({ 
-        x: mx, 
-        rotation: rot, 
+      api.start({
+        x: mx,
+        rotation: rot,
         scale: 1.03,
-        immediate: true 
+        immediate: true
       });
     }
   }, {
@@ -292,7 +296,7 @@ export function MovieSwiper() {
         ...currentMovie,
         vote_count: safeNumberConversion(currentMovie.vote_count)
       };
-      
+
       toggleWatchlist(movieToAdd as MovieDetails);
       toast.success('Фільм додано до списку перегляду');
     }
@@ -306,16 +310,16 @@ export function MovieSwiper() {
   // Обробка кнопок лайк/дизлайк
   const handleButtonLike = () => {
     // Імітуємо анімацію свайпу вправо
-    api.start({ 
-      x: (200 + windowSize.width), 
-      rotation: 15, 
-      config: { friction: 50, tension: 200 } 
+    api.start({
+      x: (200 + windowSize.width),
+      rotation: 15,
+      config: { friction: 50, tension: 200 }
     });
-    
+
     setDirection('right');
     setGone(true);
     handleLike();
-    
+
     setTimeout(() => {
       setGone(false);
       api.start({ x: 0, y: 0, rotation: 0, scale: 1 });
@@ -326,16 +330,16 @@ export function MovieSwiper() {
 
   const handleButtonDislike = () => {
     // Імітуємо анімацію свайпу вліво
-    api.start({ 
-      x: -(200 + windowSize.width), 
-      rotation: -15, 
-      config: { friction: 50, tension: 200 } 
+    api.start({
+      x: -(200 + windowSize.width),
+      rotation: -15,
+      config: { friction: 50, tension: 200 }
     });
-    
+
     setDirection('left');
     setGone(true);
     handleDislike();
-    
+
     setTimeout(() => {
       setGone(false);
       api.start({ x: 0, y: 0, rotation: 0, scale: 1 });
@@ -375,7 +379,7 @@ export function MovieSwiper() {
       // Віднімаємо висоту хедера (64px) і відступ для нижнього тексту (40px)
       return windowSize.height - 104;
     }
-    
+
     // Для десктопів використовуємо фіксовану висоту або відносну від висоти вікна
     return Math.min(windowSize.height * 0.85, 700);
   };
@@ -435,7 +439,7 @@ export function MovieSwiper() {
       </div>
     );
   }
-  
+
   // Отримуємо коректне значення vote_count
   const voteCount = safeNumberConversion(currentMovie.vote_count);
 
@@ -444,9 +448,9 @@ export function MovieSwiper() {
       <div className="fixed inset-0 top-16 flex flex-col items-center">
         {/* Кнопка фільтрів - перенесена з картки на бокову частину екрану */}
         <div className="fixed top-20 right-4 z-50">
-          <Button 
-            variant="default" 
-            size="icon" 
+          <Button
+            variant="default"
+            size="icon"
             className="rounded-full shadow-lg bg-primary text-primary-foreground border-0"
             onClick={() => setFiltersOpen(true)}
           >
@@ -455,7 +459,7 @@ export function MovieSwiper() {
         </div>
 
         <div className="relative w-full max-w-md mx-auto px-4 pt-2 flex-1 flex flex-col h-full">
-          <div 
+          <div
             className="relative w-full flex-grow"
             style={{ height: `${calculateCardHeight()}px` }}
           >
@@ -488,7 +492,7 @@ export function MovieSwiper() {
                       <p className="text-muted-foreground">Немає зображення</p>
                     </div>
                   )}
-                  
+
                   {/* Індикатор переглянутого фільму */}
                   {movieWatched && (
                     <div className="absolute top-4 right-4 bg-blue-500/80 text-white px-3 py-1 rounded-full flex items-center gap-2 z-20">
@@ -496,7 +500,7 @@ export function MovieSwiper() {
                       <span>Переглянуто</span>
                     </div>
                   )}
-                  
+
                   {/* Оверлей для переглянутих фільмів */}
                   {movieWatched && (
                     <div className="absolute inset-0 flex items-center justify-center bg-blue-500/10 z-10">
@@ -505,7 +509,7 @@ export function MovieSwiper() {
                       </div>
                     </div>
                   )}
-                  
+
                   {/* Індикатори свайпу */}
                   {direction === 'right' && (
                     <div className="absolute top-10 right-10 transform rotate-12 border-4 border-green-500 rounded-md px-4 py-2 bg-green-500/30 z-30">
@@ -523,7 +527,7 @@ export function MovieSwiper() {
                 <div className="absolute bottom-0 left-0 right-0 z-20">
                   {/* Градієнтний перехід, який починається вище на постері */}
                   <div className="absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t from-black/100 via-black/90 to-transparent"></div>
-                  
+
                   {/* Контент з інформацією */}
                   <div className="relative p-3 pb-4">
                     <div className="flex flex-col gap-1">
@@ -552,7 +556,7 @@ export function MovieSwiper() {
                       <p className="text-white/90 text-xs sm:text-sm line-clamp-2 drop-shadow-md mb-2">
                         {currentMovie.overview || 'Опис відсутній'}
                       </p>
-                      
+
                       {/* Кнопки дій */}
                       <div className="flex justify-between pt-2">
                         <Button
@@ -564,14 +568,30 @@ export function MovieSwiper() {
                           <ThumbsDown className="h-5 w-5" />
                         </Button>
 
+                        <Button
+                          onClick={() => hasTrailer && setTrailerOpen(true)}
+                          variant="secondary"
+                          size="icon"
+                          className={`rounded-full h-12 w-12 shadow-lg ${hasTrailer
+                              ? 'bg-purple-500 hover:bg-purple-600 text-white'
+                              : 'bg-gray-400 text-gray-300 cursor-not-allowed'
+                            }`}
+                          disabled={!hasTrailer || isCheckingTrailer}
+                        >
+                          {isCheckingTrailer ? (
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                          ) : (
+                            <Film className="h-5 w-5" />
+                          )}
+                        </Button>
+
                         {/* Кнопка переглянуто/не переглянуто */}
                         <Button
                           onClick={handleToggleWatched}
                           variant="default"
                           size="icon"
-                          className={`rounded-full h-12 w-12 shadow-lg ${
-                            movieWatched ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-500 hover:bg-gray-600'
-                          }`}
+                          className={`rounded-full h-12 w-12 shadow-lg ${movieWatched ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-500 hover:bg-gray-600'
+                            }`}
                           disabled={isMarkingWatched}
                         >
                           {isMarkingWatched ? (
@@ -582,7 +602,7 @@ export function MovieSwiper() {
                             <Eye className="h-5 w-5" />
                           )}
                         </Button>
-                        
+
                         <Button
                           onClick={() => {
                             if (movieDetails) {
@@ -595,7 +615,7 @@ export function MovieSwiper() {
                         >
                           <Info className="h-5 w-5" />
                         </Button>
-                        
+
                         <Button
                           onClick={handleButtonLike}
                           variant="default"
@@ -611,7 +631,7 @@ export function MovieSwiper() {
               </Card>
             </animated.div>
           </div>
-          
+
           <div className="text-center my-2 text-xs md:text-sm text-muted-foreground px-4">
             <p>Проведіть вліво, щоб пропустити, або вправо, щоб додати до списку перегляду</p>
           </div>
@@ -628,16 +648,16 @@ export function MovieSwiper() {
                 Налаштуйте параметри для пошуку фільмів
               </SheetDescription>
             </SheetHeader>
-            
+
             <div className="px-6 py-4 flex-1 overflow-auto space-y-6">
               {/* Рейтинг фільму */}
               <div className="space-y-2">
                 <Label>Рейтинг фільму ({filters.minRating} - {filters.maxRating})</Label>
-                <Slider 
-                  min={0} 
-                  max={10} 
-                  step={0.5} 
-                  value={[filters.minRating, filters.maxRating]} 
+                <Slider
+                  min={0}
+                  max={10}
+                  step={0.5}
+                  value={[filters.minRating, filters.maxRating]}
                   onValueChange={(values) => setFilters({
                     ...filters,
                     minRating: values[0],
@@ -645,15 +665,15 @@ export function MovieSwiper() {
                   })}
                 />
               </div>
-              
+
               {/* Рік випуску */}
               <div className="space-y-2">
                 <Label>Рік випуску ({filters.minYear} - {filters.maxYear})</Label>
-                <Slider 
-                  min={1900} 
-                  max={currentYear} 
-                  step={1} 
-                  value={[filters.minYear, filters.maxYear]} 
+                <Slider
+                  min={1900}
+                  max={currentYear}
+                  step={1}
+                  value={[filters.minYear, filters.maxYear]}
                   onValueChange={(values) => setFilters({
                     ...filters,
                     minYear: values[0],
@@ -661,13 +681,13 @@ export function MovieSwiper() {
                   })}
                 />
               </div>
-              
+
               {/* Мова */}
               <div className="space-y-2">
                 <Label htmlFor="language">Мова</Label>
-                <Select 
-                  value={filters.language} 
-                  onValueChange={(value) => setFilters({...filters, language: value})}
+                <Select
+                  value={filters.language}
+                  onValueChange={(value) => setFilters({ ...filters, language: value })}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Виберіть мову" />
@@ -681,13 +701,13 @@ export function MovieSwiper() {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               {/* Жанр */}
               <div className="space-y-2">
                 <Label htmlFor="genre">Жанр</Label>
-                <Select 
-                  value={filters.genre || "any"} 
-                  onValueChange={(value) => setFilters({...filters, genre: value === "any" ? null : value})}
+                <Select
+                  value={filters.genre || "any"}
+                  onValueChange={(value) => setFilters({ ...filters, genre: value === "any" ? null : value })}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Виберіть жанр" />
@@ -702,20 +722,20 @@ export function MovieSwiper() {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               {/* Включати дорослий контент */}
               <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="includeAdult" 
-                  checked={filters.includeAdult} 
-                  onCheckedChange={(checked) => 
-                    setFilters({...filters, includeAdult: Boolean(checked)})
+                <Checkbox
+                  id="includeAdult"
+                  checked={filters.includeAdult}
+                  onCheckedChange={(checked) =>
+                    setFilters({ ...filters, includeAdult: Boolean(checked) })
                   }
                 />
                 <Label htmlFor="includeAdult">Включати дорослий контент</Label>
               </div>
             </div>
-            
+
             <SheetFooter className="p-4 border-t">
               <div className="flex flex-col gap-3 w-full">
                 <Button variant="outline" onClick={resetFilters} className="w-full">
@@ -731,6 +751,11 @@ export function MovieSwiper() {
           </div>
         </SheetContent>
       </Sheet>
+      <MovieTrailer
+        movieId={currentMovie?.id || 0}
+        isOpen={trailerOpen}
+        onClose={() => setTrailerOpen(false)}
+      />
     </>
   );
 }
