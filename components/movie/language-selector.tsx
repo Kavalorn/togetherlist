@@ -51,6 +51,10 @@ export function LanguageSelector({
           (t: MovieTranslation) => t.data.overview && t.data.overview.trim() !== ''
         );
         
+        // Логуємо для відлагодження
+        console.log(`Завантажено переклади для фільму ${movieId}:`, validTranslations.map((t: any) => 
+          ({ iso_639_1: t.iso_639_1, iso_3166_1: t.iso_3166_1, name: t.name })));
+        
         setTranslations(validTranslations);
       } catch (error) {
         console.error('Помилка при отриманні перекладів:', error);
@@ -62,6 +66,16 @@ export function LanguageSelector({
 
     fetchTranslations();
   }, [movieId, isOpen]);
+
+  // Створюємо унікальний ідентифікатор для кожного перекладу
+  const getTranslationKey = (translation: MovieTranslation) => {
+    return `${translation.iso_639_1}-${translation.iso_3166_1}`;
+  };
+
+  // Перевіряємо, чи це є поточна мова
+  const isCurrentLanguage = (translation: MovieTranslation) => {
+    return translation.iso_639_1 === currentLanguage;
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -87,8 +101,8 @@ export function LanguageSelector({
             <div className="space-y-2 py-2">
               {translations.map((translation) => (
                 <Button
-                  key={translation.iso_639_1}
-                  variant={currentLanguage === translation.iso_639_1 ? "default" : "outline"}
+                  key={`${translation.iso_639_1}-${translation.iso_3166_1}`}
+                  variant={isCurrentLanguage(translation) ? "default" : "outline"}
                   className="w-full justify-start"
                   onClick={() => {
                     onSelectLanguage(translation);
@@ -98,7 +112,7 @@ export function LanguageSelector({
                   <Globe className="mr-2 h-4 w-4" />
                   <span className="font-semibold">{translation.name}</span>
                   <span className="ml-auto text-xs text-muted-foreground">
-                    {translation.iso_639_1.toUpperCase()}
+                    {translation.iso_639_1.toUpperCase()} {translation.iso_3166_1 && `(${translation.iso_3166_1})`}
                   </span>
                 </Button>
               ))}

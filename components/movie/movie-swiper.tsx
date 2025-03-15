@@ -79,13 +79,13 @@ export function MovieSwiper() {
   const [trailerOpen, setTrailerOpen] = useState(false);
   const { hasTrailer, isLoading: isCheckingTrailer } = useMovieTrailer(currentMovie?.id || null);
 
-  const { 
-    selectedTranslation, 
+  const {
+    selectedTranslation,
     hasMultipleTranslations,
     isLanguageSelectorOpen,
     openLanguageSelector,
     closeLanguageSelector,
-    changeLanguage 
+    changeLanguage
   } = useMovieTranslations(currentMovie?.id || null, currentMovie?.overview);
 
   // Початкові значення фільтрів з localStorage або за замовчуванням
@@ -566,32 +566,32 @@ export function MovieSwiper() {
                         {currentMovie.title}
                       </h2>
                       <p className="text-white/90 text-xs sm:text-sm line-clamp-2 drop-shadow-md mb-2">
-                        {selectedTranslation && currentMovie?.id === selectedTranslation?.id 
-                          ? selectedTranslation.data.overview 
+                        {selectedTranslation
+                          ? selectedTranslation.data.overview
                           : (currentMovie?.overview || 'Опис відсутній')}
                       </p>
-{hasMultipleTranslations && (
-  <div className="mb-2">
-    <Button
-      variant="outline"
-      size="sm"
-      className="bg-black/30 text-white border-white/30 hover:bg-black/50"
-      onClick={openLanguageSelector}
-    >
-      <Globe className="mr-2 h-3 w-3" />
-      <span className="text-xs">{selectedTranslation ? selectedTranslation.name : 'Змінити мову'}</span>
-    </Button>
-  </div>
-)}
+                      {hasMultipleTranslations && (
+                        <div className="mb-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="bg-black/30 text-white border-white/30 hover:bg-black/50"
+                            onClick={openLanguageSelector}
+                          >
+                            <Globe className="mr-2 h-3 w-3" />
+                            <span className="text-xs">{selectedTranslation ? selectedTranslation.name : 'Змінити мову'}</span>
+                          </Button>
+                        </div>
+                      )}
 
-<LanguageSelector
-  key={`lang-selector-${currentMovie?.id || 0}`}
-  movieId={currentMovie?.id || 0}
-  isOpen={isLanguageSelectorOpen}
-  onClose={closeLanguageSelector}
-  onSelectLanguage={changeLanguage}
-  currentLanguage={selectedTranslation?.iso_639_1 || ''}
-/>
+                      <LanguageSelector
+                        key={`lang-selector-${currentMovie?.id || 0}`}
+                        movieId={currentMovie?.id || 0}
+                        isOpen={isLanguageSelectorOpen}
+                        onClose={closeLanguageSelector}
+                        onSelectLanguage={changeLanguage}
+                        currentLanguage={selectedTranslation?.iso_639_1 || ''}
+                      />
 
                       {/* Кнопки дій */}
                       <div className="flex justify-between pt-2">
@@ -609,8 +609,8 @@ export function MovieSwiper() {
                           variant="secondary"
                           size="icon"
                           className={`rounded-full h-12 w-12 shadow-lg ${hasTrailer
-                              ? 'bg-purple-500 hover:bg-purple-600 text-white'
-                              : 'bg-gray-400 text-gray-300 cursor-not-allowed'
+                            ? 'bg-purple-500 hover:bg-purple-600 text-white'
+                            : 'bg-gray-400 text-gray-300 cursor-not-allowed'
                             }`}
                           disabled={!hasTrailer || isCheckingTrailer}
                         >
