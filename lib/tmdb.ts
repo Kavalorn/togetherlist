@@ -116,6 +116,24 @@ export interface MovieVideos {
   results: MovieVideo[];
 }
 
+export interface MovieTranslation {
+  id: number;        // ідентифікатор перекладу
+  iso_3166_1: string; // код країни
+  iso_639_1: string;  // код мови
+  name: string;       // назва мови
+  english_name: string; // англійська назва мови
+  data: {
+    title?: string;
+    overview?: string;
+    homepage?: string;
+  }
+}
+
+export interface MovieTranslations {
+  id: number;
+  translations: MovieTranslation[];
+}
+
 // Інтерфейс для фільтрів
 interface RandomMovieFilters {
   minRating?: number;
@@ -260,6 +278,9 @@ export const tmdbApi = {
       '/movie/now_playing',
       { page: page.toString(), ...showLanguage }
     ),
+
+  getMovieTranslations: (id: number) =>
+    fetchFromTMDB<MovieTranslations>(`/movie/${id}/translations`),
 
   // Отримання випадкових фільмів
   getRandomMovie: async (filters: RandomMovieFilters = {}) => {

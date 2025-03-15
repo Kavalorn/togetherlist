@@ -12,7 +12,7 @@ import { useWatchlist } from '@/hooks/use-watchlist';
 import { useWatchedMovies } from '@/hooks/use-watched-movies';
 import { useUIStore } from '@/store/ui-store';
 import { Badge } from '../ui/badge';
-import { Movie, MovieDetails } from '@/lib/tmdb';
+import { Movie, MovieDetails, MovieTranslation } from '@/lib/tmdb';
 import { Card } from '../ui/card';
 import { toast } from 'sonner';
 import { tmdbApi } from '@/lib/tmdb';
@@ -31,6 +31,9 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { MovieTrailer } from './movie-trailer';
 import { useMovieTrailer } from '@/hooks/use-movie-trailer';
+import { useMovieTranslations } from '@/hooks/use-movie-translations';
+import { LanguageSelector } from './language-selector';
+import { Globe } from 'lucide-react';
 
 // Функція для безпечного перетворення значення на число
 function safeNumberConversion(value: any): number {
@@ -75,6 +78,15 @@ export function MovieSwiper() {
   const [isMarkingWatched, setIsMarkingWatched] = useState(false);
   const [trailerOpen, setTrailerOpen] = useState(false);
   const { hasTrailer, isLoading: isCheckingTrailer } = useMovieTrailer(currentMovie?.id || null);
+
+  const { 
+    selectedTranslation, 
+    hasMultipleTranslations,
+    isLanguageSelectorOpen,
+    openLanguageSelector,
+    closeLanguageSelector,
+    changeLanguage 
+  } = useMovieTranslations(currentMovie?.id || null, currentMovie?.overview);
 
   // Початкові значення фільтрів з localStorage або за замовчуванням
   const [filters, setFilters] = useState<MovieFilters>(() => {
@@ -554,8 +566,32 @@ export function MovieSwiper() {
                         {currentMovie.title}
                       </h2>
                       <p className="text-white/90 text-xs sm:text-sm line-clamp-2 drop-shadow-md mb-2">
-                        {currentMovie.overview || 'Опис відсутній'}
+                        {selectedTranslation && currentMovie?.id === selectedTranslation?.id 
+                          ? selectedTranslation.data.overview 
+                          : (currentMovie?.overview || 'Опис відсутній')}
                       </p>
+{hasMultipleTranslations && (
+  <div className="mb-2">
+    <Button
+      variant="outline"
+      size="sm"
+      className="bg-black/30 text-white border-white/30 hover:bg-black/50"
+      onClick={openLanguageSelector}
+    >
+      <Globe className="mr-2 h-3 w-3" />
+      <span className="text-xs">{selectedTranslation ? selectedTranslation.name : 'Змінити мову'}</span>
+    </Button>
+  </div>
+)}
+
+<LanguageSelector
+  key={`lang-selector-${currentMovie?.id || 0}`}
+  movieId={currentMovie?.id || 0}
+  isOpen={isLanguageSelectorOpen}
+  onClose={closeLanguageSelector}
+  onSelectLanguage={changeLanguage}
+  currentLanguage={selectedTranslation?.iso_639_1 || ''}
+/>
 
                       {/* Кнопки дій */}
                       <div className="flex justify-between pt-2">

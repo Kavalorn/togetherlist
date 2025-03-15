@@ -16,6 +16,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { toast } from 'sonner';
 import { MovieTrailer } from './movie-trailer';
 import { useMovieTrailer } from '@/hooks/use-movie-trailer';
+import { useMovieTranslations } from '@/hooks/use-movie-translations';
+import { LanguageSelector } from './language-selector';
+import { Globe } from 'lucide-react';
 
 // Функція для безпечного перетворення значення на число
 function safeNumberConversion(value: any): number {
@@ -41,16 +44,25 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
   const [trailerOpen, setTrailerOpen] = useState(false);
   const { hasTrailer, isLoading: isCheckingTrailer } = useMovieTrailer(movie.id);
 
+  const {
+    selectedTranslation,
+    hasMultipleTranslations,
+    isLanguageSelectorOpen,
+    openLanguageSelector,
+    closeLanguageSelector,
+    changeLanguage
+  } = useMovieTranslations(movie.id, movie.overview);
+
   // Забезпечуємо, що у нас є значення рейтингу та кількості голосів
   const voteAverage = movie.vote_average !== undefined ? movie.vote_average : movieDetails?.vote_average || 0;
-  
+
   // Перевіряємо строго на undefined або null для vote_count і перетворюємо на число
   const voteCount = safeNumberConversion(
     movie.vote_count !== undefined && movie.vote_count !== null
       ? movie.vote_count
       : movieDetails?.vote_count
   );
-  
+
   // Перевіряємо чи фільм переглянуто
   const movieWatched = isWatched(movie.id);
 
@@ -60,7 +72,7 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
       openMovieDetailsModal(movieDetails);
     }
   };
-  
+
   // Обробник додавання до списку перегляду
   const handleAddToWatchlist = () => {
     // Переконуємося, що передаємо всі необхідні дані, включаючи vote_count
@@ -73,14 +85,14 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
       vote_average: voteAverage,
       vote_count: voteCount
     };
-    
+
     toggleWatchlist(movieData as any);
   };
-  
+
   // Обробник видалення фільму зі списку переглянутих
   const handleRemoveFromWatched = () => {
     setIsRemovingLocal(true);
-    
+
     // Тут викликаємо функцію removeFromWatched з TanStack Query
     // зі специфічними опціями onSuccess та onError
     removeFromWatched(movie.id, {
@@ -94,11 +106,11 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
       }
     });
   };
-  
+
   // Обробник додавання фільму до списку переглянутих
   const handleAddToWatched = () => {
     setIsAddingLocal(true);
-    
+
     const movieData = {
       id: movie.id,
       title: movie.title,
@@ -108,7 +120,7 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
       vote_average: voteAverage,
       vote_count: voteCount
     };
-    
+
     markAsWatched({ movie: movieData as any }, {
       onSuccess: () => {
         toast.success(`"${movie.title}" позначено як переглянутий`);
@@ -120,11 +132,11 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
       }
     });
   };
-  
+
   // Обробник для кнопки зміни статусу перегляду (око)
   const handleToggleWatched = (e: React.MouseEvent) => {
     e.stopPropagation();
-    
+
     if (movieWatched) {
       handleRemoveFromWatched();
     } else {
@@ -151,7 +163,7 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
               <span>{voteAverage.toFixed(1)} ({voteCount})</span>
             </div>
           )}
-          
+
           <TooltipProvider>
             {/* Кнопка статусу перегляду */}
             <Tooltip>
@@ -159,11 +171,10 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className={`absolute bottom-2 left-2 p-1.5 rounded-full ${
-                    movieWatched 
-                      ? 'bg-blue-500 hover:bg-blue-600 text-white' 
+                  className={`absolute bottom-2 left-2 p-1.5 rounded-full ${movieWatched
+                      ? 'bg-blue-500 hover:bg-blue-600 text-white'
                       : 'bg-white/80 hover:bg-white text-gray-600 hover:text-gray-800'
-                  }`}
+                    }`}
                   onClick={handleToggleWatched}
                   disabled={isRemovingLocal || isAddingLocal}
                 >
@@ -181,7 +192,7 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-          
+
           <TooltipProvider>
             {/* Кнопка списку перегляду */}
             <Tooltip>
@@ -189,11 +200,10 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className={`absolute top-2 right-2 p-1.5 rounded-full ${
-                    isInWatchlist(movie.id) 
-                      ? 'bg-yellow-500 hover:bg-yellow-600 text-white' 
+                  className={`absolute top-2 right-2 p-1.5 rounded-full ${isInWatchlist(movie.id)
+                      ? 'bg-yellow-500 hover:bg-yellow-600 text-white'
                       : 'bg-white/80 hover:bg-white text-gray-600 hover:text-gray-800'
-                  }`}
+                    }`}
                   onClick={(e) => {
                     e.stopPropagation();
                     handleAddToWatchlist();
@@ -211,38 +221,37 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
               </TooltipContent>
             </Tooltip>
 
-              {/* Кнопка трейлера */}
-              <Tooltip>
-    <TooltipTrigger asChild>
-      <Button
-        variant="ghost"
-        size="icon"
-        className={`absolute bottom-2 right-2 p-1.5 rounded-full ${
-          hasTrailer 
-            ? 'bg-white/80 hover:bg-white text-gray-600 hover:text-gray-800' 
-            : 'bg-gray-400/50 text-gray-500 cursor-not-allowed'
-        }`}
-        onClick={(e) => {
-          e.stopPropagation();
-          if (hasTrailer) {
-            setTrailerOpen(true);
-          }
-        }}
-        disabled={!hasTrailer || isCheckingTrailer}
-      >
-        {isCheckingTrailer ? (
-          <Loader2 className="h-5 w-5 animate-spin" />
-        ) : (
-          <Film className="h-5 w-5" />
-        )}
-      </Button>
-    </TooltipTrigger>
-    <TooltipContent>
-      {hasTrailer ? "Дивитися трейлер" : "Трейлер відсутній"}
-    </TooltipContent>
-  </Tooltip>
+            {/* Кнопка трейлера */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={`absolute bottom-2 right-2 p-1.5 rounded-full ${hasTrailer
+                      ? 'bg-white/80 hover:bg-white text-gray-600 hover:text-gray-800'
+                      : 'bg-gray-400/50 text-gray-500 cursor-not-allowed'
+                    }`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (hasTrailer) {
+                      setTrailerOpen(true);
+                    }
+                  }}
+                  disabled={!hasTrailer || isCheckingTrailer}
+                >
+                  {isCheckingTrailer ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <Film className="h-5 w-5" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {hasTrailer ? "Дивитися трейлер" : "Трейлер відсутній"}
+              </TooltipContent>
+            </Tooltip>
           </TooltipProvider>
-          
+
           {movieWatched && (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="bg-blue-500/30 rounded-full p-2">
@@ -282,7 +291,7 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
             <span>{voteAverage.toFixed(1)} ({voteCount})</span>
           </div>
         )}
-        
+
         <TooltipProvider>
           {/* Кнопка списку перегляду */}
           <Tooltip>
@@ -290,11 +299,10 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                className={`absolute top-2 right-2 p-1.5 rounded-full ${
-                  isInWatchlist(movie.id) 
-                    ? 'bg-yellow-500 hover:bg-yellow-600 text-white' 
+                className={`absolute top-2 right-2 p-1.5 rounded-full ${isInWatchlist(movie.id)
+                    ? 'bg-yellow-500 hover:bg-yellow-600 text-white'
                     : 'bg-white/80 hover:bg-white text-gray-600 hover:text-gray-800'
-                }`}
+                  }`}
                 onClick={(e) => {
                   e.stopPropagation();
                   handleAddToWatchlist();
@@ -312,7 +320,7 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
-        
+
         <TooltipProvider>
           {/* Кнопка статусу перегляду */}
           <Tooltip>
@@ -320,11 +328,10 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                className={`absolute bottom-2 right-2 p-1.5 rounded-full ${
-                  movieWatched 
-                    ? 'bg-blue-500 hover:bg-blue-600 text-white' 
+                className={`absolute bottom-2 right-2 p-1.5 rounded-full ${movieWatched
+                    ? 'bg-blue-500 hover:bg-blue-600 text-white'
                     : 'bg-white/80 hover:bg-white text-gray-600 hover:text-gray-800'
-                }`}
+                  }`}
                 onClick={handleToggleWatched}
                 disabled={isRemovingLocal || isAddingLocal}
               >
@@ -342,7 +349,7 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
-        
+
         {movieWatched && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="bg-blue-500/30 rounded-full p-3">
@@ -363,38 +370,63 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
             {movie.release_date ? format(new Date(movie.release_date), 'dd MMM yyyy') : 'Невідома дата'}
           </p>
           <p className="text-xs sm:text-sm line-clamp-3 mb-3">
-            {movie.overview || 'Опис відсутній'}
+            {selectedTranslation ? selectedTranslation.data.overview : (movie.overview || 'Опис відсутній')}
           </p>
+          {hasMultipleTranslations && (
+            <div className="mb-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openLanguageSelector();
+                }}
+              >
+                <Globe className="mr-2 h-3 w-3" />
+                <span className="text-xs">{selectedTranslation ? selectedTranslation.name : 'Змінити мову опису'}</span>
+              </Button>
+            </div>
+          )}
+
+          {/* Компонент вибору мови */}
+          <LanguageSelector
+            movieId={movie.id}
+            isOpen={isLanguageSelectorOpen}
+            onClose={closeLanguageSelector}
+            onSelectLanguage={changeLanguage}
+            currentLanguage={selectedTranslation?.iso_639_1 || ''}
+          />
+
         </CardContent>
         <CardFooter className="p-4 pt-0 flex flex-col sm:flex-row gap-2">
-  <Button
-    variant="default"
-    className="w-full sm:flex-1"
-    onClick={handleOpenDetails}
-  >
-    <Info className="mr-2 h-4 w-4" />
-    Деталі
-  </Button>
-  <Button
-  variant="secondary"
-  className="w-full sm:flex-1"
-  onClick={(e) => {
-    e.stopPropagation();
-    if (hasTrailer) {
-      setTrailerOpen(true);
-    }
-  }}
-  disabled={!hasTrailer || isCheckingTrailer}
->
-  {isCheckingTrailer ? (
-    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-  ) : (
-    <Film className="mr-2 h-4 w-4" />
-  )}
-  {hasTrailer ? "Трейлер" : "Немає трейлера"}
-</Button>
-</CardFooter>
-        <MovieTrailer 
+          <Button
+            variant="default"
+            className="w-full sm:flex-1"
+            onClick={handleOpenDetails}
+          >
+            <Info className="mr-2 h-4 w-4" />
+            Деталі
+          </Button>
+          <Button
+            variant="secondary"
+            className="w-full sm:flex-1"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (hasTrailer) {
+                setTrailerOpen(true);
+              }
+            }}
+            disabled={!hasTrailer || isCheckingTrailer}
+          >
+            {isCheckingTrailer ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Film className="mr-2 h-4 w-4" />
+            )}
+            {hasTrailer ? "Трейлер" : "Немає трейлера"}
+          </Button>
+        </CardFooter>
+        <MovieTrailer
           movieId={movie.id}
           isOpen={trailerOpen}
           onClose={() => setTrailerOpen(false)}

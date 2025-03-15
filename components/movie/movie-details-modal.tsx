@@ -10,9 +10,9 @@ import { useUIStore } from '@/store/ui-store';
 import { useWatchlist } from '@/hooks/use-watchlist';
 import { useWatchedMovies } from '@/hooks/use-watched-movies';
 import { useMovieCredits, useMovieImages } from '@/hooks/use-movies';
-import { 
-  Bookmark, BookmarkCheck, Star, Calendar, Clock, 
-  Eye, EyeOff, Users, Loader2, 
+import {
+  Bookmark, BookmarkCheck, Star, Calendar, Clock,
+  Eye, EyeOff, Users, Loader2,
   Film
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -22,6 +22,9 @@ import { toast } from 'sonner';
 import { MovieTrailer } from './movie-trailer';
 import { useState } from 'react';
 import { useMovieTrailer } from '@/hooks/use-movie-trailer';
+import { useMovieTranslations } from '@/hooks/use-movie-translations';
+import { LanguageSelector } from './language-selector';
+import { Globe } from 'lucide-react';
 
 // Функція для безпечного перетворення значення на число
 function safeNumberConversion(value: any): number {
@@ -42,10 +45,19 @@ export function MovieDetailsModal() {
   const { data: imagesData, isLoading: isLoadingImages } = useMovieImages(selectedMovie?.id || null);
 
   const { hasTrailer, isLoading: isCheckingTrailer } = useMovieTrailer(selectedMovie?.id || null);
-  
+
   // Отримання списку друзів, які переглянули фільм
-  const { data: friendsWhoWatched, isLoading: isLoadingFriends } = 
+  const { data: friendsWhoWatched, isLoading: isLoadingFriends } =
     useWatchedMovies().getFriendsWhoWatched(selectedMovie?.id || 0);
+
+  const {
+    selectedTranslation,
+    hasMultipleTranslations,
+    isLanguageSelectorOpen,
+    openLanguageSelector,
+    closeLanguageSelector,
+    changeLanguage
+  } = useMovieTranslations(selectedMovie?.id || null, selectedMovie?.overview);
 
   // Якщо фільм не вибрано, не відображаємо модальне вікно
   if (!selectedMovie) {
@@ -57,7 +69,7 @@ export function MovieDetailsModal() {
   const formattedRating = selectedMovie.vote_average
     ? `${(selectedMovie.vote_average).toFixed(1)}/10 (${voteCount} ${voteCount === 1 ? 'голос' : 'голосів'})`
     : 'Немає оцінки';
-    
+
   // Перевіряємо чи фільм переглянуто
   const movieWatched = isWatched(selectedMovie.id);
 
@@ -76,7 +88,7 @@ export function MovieDetailsModal() {
       toast.success(`"${selectedMovie.title}" додано до списку перегляду`);
     }
   };
-  
+
   // Обробник позначення фільму як переглянутого
   const handleMarkAsWatched = () => {
     if (movieWatched) {
@@ -100,7 +112,7 @@ export function MovieDetailsModal() {
         vote_average: selectedMovie.vote_average,
         vote_count: voteCount
       };
-      
+
       markAsWatched({ movie: movieData }, {
         onSuccess: () => {
           toast.success(`"${selectedMovie.title}" позначено як переглянутий`);
@@ -141,7 +153,7 @@ export function MovieDetailsModal() {
           )}
 
           <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
-          
+
           {/* Індикатор переглянутого фільму */}
           {movieWatched && (
             <div className="absolute top-4 right-4 bg-blue-500/80 text-white px-3 py-1 rounded-full flex items-center gap-2">
@@ -168,7 +180,7 @@ export function MovieDetailsModal() {
                     <span className="text-muted-foreground text-sm">Постер відсутній</span>
                   </div>
                 )}
-                
+
                 {/* Оверлей для переглянутих фільмів */}
                 {movieWatched && (
                   <div className="absolute inset-0 flex items-center justify-center bg-blue-500/20">
@@ -205,7 +217,7 @@ export function MovieDetailsModal() {
                     )}
                   </Button>
                 </div>
-                
+
                 <Button
                   variant={isInWatchlist(selectedMovie.id) ? "default" : "outline"}
                   className={`w-full ${isInWatchlist(selectedMovie.id) ? "bg-yellow-600 hover:bg-yellow-700" : ""}`}
@@ -225,18 +237,18 @@ export function MovieDetailsModal() {
                 </Button>
 
                 <Button
-  variant="secondary"
-  className="w-full"
-  onClick={() => setTrailerOpen(true)}
-  disabled={!hasTrailer || isCheckingTrailer}
->
-  {isCheckingTrailer ? (
-    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-  ) : (
-    <Film className="mr-2 h-5 w-5" />
-  )}
-  {hasTrailer ? "Дивитися трейлер" : "Трейлер відсутній"}
-</Button>
+                  variant="secondary"
+                  className="w-full"
+                  onClick={() => setTrailerOpen(true)}
+                  disabled={!hasTrailer || isCheckingTrailer}
+                >
+                  {isCheckingTrailer ? (
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  ) : (
+                    <Film className="mr-2 h-5 w-5" />
+                  )}
+                  {hasTrailer ? "Дивитися трейлер" : "Трейлер відсутній"}
+                </Button>
 
                 <div className="mt-4 space-y-2">
                   <div className="flex items-center gap-2 text-sm">
@@ -257,14 +269,14 @@ export function MovieDetailsModal() {
                     </div>
                   )}
                 </div>
-                
+
                 {/* Секція друзів, які переглянули фільм */}
                 <div className="mt-6">
                   <h3 className="font-medium mb-2 flex items-center gap-2">
                     <Users className="h-4 w-4" />
                     Хто з друзів дивився
                   </h3>
-                  
+
                   {isLoadingFriends ? (
                     <div className="flex items-center justify-center py-4">
                       <Loader2 className="h-5 w-5 animate-spin mr-2" />
@@ -313,8 +325,32 @@ export function MovieDetailsModal() {
                 )}
               </DialogHeader>
 
-              {selectedMovie.overview ? (
-                <p className="text-sm sm:text-base">{selectedMovie.overview}</p>
+              {selectedMovie.overview || (selectedTranslation && selectedTranslation.data.overview) ? (
+                <div className="relative">
+                  <p className="text-sm sm:text-base">
+                    {selectedTranslation ? selectedTranslation.data.overview : selectedMovie.overview}
+                  </p>
+
+                  {hasMultipleTranslations && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-2"
+                      onClick={openLanguageSelector}
+                    >
+                      <Globe className="mr-2 h-4 w-4" />
+                      {selectedTranslation ? selectedTranslation.name : 'Змінити мову опису'}
+                    </Button>
+                  )}
+
+                  <LanguageSelector
+                    movieId={selectedMovie.id}
+                    isOpen={isLanguageSelectorOpen}
+                    onClose={closeLanguageSelector}
+                    onSelectLanguage={changeLanguage}
+                    currentLanguage={selectedTranslation?.iso_639_1 || ''}
+                  />
+                </div>
               ) : (
                 <p className="text-muted-foreground text-sm">Опис відсутній</p>
               )}
@@ -333,14 +369,14 @@ export function MovieDetailsModal() {
               )}
             </div>
           </div>
-          
+
           <div className='pt-6 md:pt-4'>
             <Tabs defaultValue="cast">
               <TabsList className="w-full justify-start mb-4">
                 <TabsTrigger value="cast">Актори</TabsTrigger>
                 <TabsTrigger value="images">Зображення</TabsTrigger>
               </TabsList>
-              
+
               <TabsContent value="cast" className="mt-0">
                 <h3 className='text-lg sm:text-xl font-semibold mb-2'>Каст</h3>
                 {isLoadingCredits ? (
@@ -354,36 +390,36 @@ export function MovieDetailsModal() {
                     ))}
                   </div>
                 ) : creditsData?.cast && creditsData.cast.length > 0 ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 pr-0 sm:pr-4">
-                      {creditsData.cast.slice(0, 20).map(actor => (
-                        <div
-                          key={actor.id}
-                          className="rounded-md overflow-hidden border cursor-pointer hover:shadow-md transition-shadow"
-                          onClick={() => {
-                            // Закриваємо деталі фільму і відкриваємо інформацію про актора
-                            closeMovieDetailsModal();
-                            // Перехід на сторінку актора
-                            window.location.href = `/actor/${actor.id}`;
-                          }}
-                        >
-                          <div className="relative aspect-[2/3] w-full">
-                            <Image
-                              src={actor.profile_path
-                                ? `https://image.tmdb.org/t/p/w342${actor.profile_path}`
-                                : '/placeholder-person.png'}
-                              alt={actor.name}
-                              fill
-                              className="object-cover"
-                              sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
-                            />
-                          </div>
-                          <div className="p-2">
-                            <p className="font-medium text-sm">{actor.name}</p>
-                            <p className="text-xs text-muted-foreground">{actor.character}</p>
-                          </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 pr-0 sm:pr-4">
+                    {creditsData.cast.slice(0, 20).map(actor => (
+                      <div
+                        key={actor.id}
+                        className="rounded-md overflow-hidden border cursor-pointer hover:shadow-md transition-shadow"
+                        onClick={() => {
+                          // Закриваємо деталі фільму і відкриваємо інформацію про актора
+                          closeMovieDetailsModal();
+                          // Перехід на сторінку актора
+                          window.location.href = `/actor/${actor.id}`;
+                        }}
+                      >
+                        <div className="relative aspect-[2/3] w-full">
+                          <Image
+                            src={actor.profile_path
+                              ? `https://image.tmdb.org/t/p/w342${actor.profile_path}`
+                              : '/placeholder-person.png'}
+                            alt={actor.name}
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+                          />
                         </div>
-                      ))}
-                    </div>
+                        <div className="p-2">
+                          <p className="font-medium text-sm">{actor.name}</p>
+                          <p className="text-xs text-muted-foreground">{actor.character}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 ) : (
                   <p className="text-muted-foreground text-center py-8">Інформація про акторів відсутня</p>
                 )}
@@ -421,11 +457,11 @@ export function MovieDetailsModal() {
           </div>
         </div>
       </DialogContent>
-      <MovieTrailer 
-  movieId={selectedMovie.id}
-  isOpen={trailerOpen}
-  onClose={() => setTrailerOpen(false)}
-/>
+      <MovieTrailer
+        movieId={selectedMovie.id}
+        isOpen={trailerOpen}
+        onClose={() => setTrailerOpen(false)}
+      />
     </Dialog>
   )
 };
