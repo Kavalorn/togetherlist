@@ -6,9 +6,10 @@ import Image from 'next/image';
 import { useSpring, animated } from '@react-spring/web';
 import { useDrag } from '@use-gesture/react';
 import { Button } from '@/components/ui/button';
-import { Star, ThumbsDown, ThumbsUp, Info, Loader2, Filter } from 'lucide-react';
+import { Star, ThumbsDown, ThumbsUp, Info, Loader2, Filter, Eye, EyeOff } from 'lucide-react';
 import { useMovieDetails } from '@/hooks/use-movies';
 import { useWatchlist } from '@/hooks/use-watchlist';
+import { useWatchedMovies } from '@/hooks/use-watched-movies';
 import { useUIStore } from '@/store/ui-store';
 import { Badge } from '../ui/badge';
 import { Movie, MovieDetails } from '@/lib/tmdb';
@@ -63,11 +64,13 @@ export function MovieSwiper() {
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
   const [direction, setDirection] = useState<'left' | 'right' | null>(null);
   const { isInWatchlist, toggleWatchlist } = useWatchlist();
+  const { isWatched, markAsWatched, removeFromWatched, isMarking, isRemoving } = useWatchedMovies();
   const { openMovieDetailsModal } = useUIStore();
   const containerRef = useRef<HTMLDivElement>(null);
   const [gone, setGone] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const currentYear = new Date().getFullYear();
+  const [isMarkingWatched, setIsMarkingWatched] = useState(false);
 
   // Початкові значення фільтрів з localStorage або за замовчуванням
   const [filters, setFilters] = useState<MovieFilters>(() => {
@@ -103,6 +106,17 @@ export function MovieSwiper() {
 
   // Отримуємо деталі поточного фільму
   const { data: movieDetails } = useMovieDetails(currentMovie?.id || null);
+  
+  // Перевіряємо чи фільм переглянуто
+  const movieWatched = isWatched(currentMovie?.id || 0);
+  
+  // Відстежуємо зміни статусу перегляду
+  useEffect(() => {
+    if (currentMovie) {
+      const isWatchedStatus = isWatched(currentMovie.id);
+      console.log(`Фільм ${currentMovie.title} переглянуто: ${isWatchedStatus}`);
+    }
+  }, [currentMovie, isWatched]);
 
   // Оновлюємо розмір вікна при завантаженні та зміні розміру
   useEffect(() => {
@@ -159,6 +173,49 @@ export function MovieSwiper() {
   useEffect(() => {
     loadRandomMovie();
   }, []);
+
+  // Обробник для кнопки переглянуто/не переглянуто
+  const handleToggleWatched = () => {
+    if (!currentMovie) return;
+    
+    setIsMarkingWatched(true);
+    
+    const movieData = {
+      id: currentMovie.id,
+      title: currentMovie.title,
+      poster_path: currentMovie.poster_path,
+      release_date: currentMovie.release_date,
+      overview: currentMovie.overview,
+      vote_average: currentMovie.vote_average,
+      vote_count: safeNumberConversion(currentMovie.vote_count)
+    };
+    
+    if (movieWatched) {
+      // Видаляємо з переглянутих
+      removeFromWatched(currentMovie.id, {
+        onSuccess: () => {
+          toast.success(`"${currentMovie.title}" прибрано з переглянутих фільмів`);
+          setIsMarkingWatched(false);
+        },
+        onError: (error: any) => {
+          toast.error(`Помилка: ${error.message || 'Не вдалося видалити фільм'}`);
+          setIsMarkingWatched(false);
+        }
+      });
+    } else {
+      // Позначаємо як переглянутий
+      markAsWatched({ movie: movieData as any }, {
+        onSuccess: () => {
+          toast.success(`"${currentMovie.title}" позначено як переглянутий`);
+          setIsMarkingWatched(false);
+        },
+        onError: (error: any) => {
+          toast.error(`Помилка: ${error.message || 'Не вдалося позначити фільм'}`);
+          setIsMarkingWatched(false);
+        }
+      });
+    }
+  };
 
   // Налаштування анімації з react-spring
   const [props, api] = useSpring(() => ({
@@ -397,6 +454,25 @@ export function MovieSwiper() {
           </Button>
         </div>
 
+        {/* Кнопка швидкого перемикання статусу перегляду */}
+        <div className="fixed top-20 left-4 z-50">
+          <Button 
+            variant="default" 
+            size="icon" 
+            className={`rounded-full shadow-lg ${movieWatched ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-500/70 hover:bg-gray-600'} text-white border-0`}
+            onClick={handleToggleWatched}
+            disabled={isMarkingWatched}
+          >
+            {isMarkingWatched ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : movieWatched ? (
+              <EyeOff className="h-5 w-5" />
+            ) : (
+              <Eye className="h-5 w-5" />
+            )}
+          </Button>
+        </div>
+
         <div className="relative w-full max-w-md mx-auto px-4 pt-2 flex-1 flex flex-col h-full">
           <div 
             className="relative w-full flex-grow"
@@ -422,7 +498,7 @@ export function MovieSwiper() {
                       src={`https://image.tmdb.org/t/p/w780${currentMovie.poster_path}`}
                       alt={currentMovie.title}
                       fill
-                      className="object-cover"
+                      className={`object-cover ${movieWatched ? 'opacity-80' : ''}`}
                       priority
                       sizes="(max-width: 768px) 100vw, 500px"
                     />
@@ -432,28 +508,45 @@ export function MovieSwiper() {
                     </div>
                   )}
                   
+                  {/* Індикатор переглянутого фільму */}
+                  {movieWatched && (
+                    <div className="absolute top-4 right-4 bg-blue-500/80 text-white px-3 py-1 rounded-full flex items-center gap-2 z-20">
+                      <Eye className="h-4 w-4" />
+                      <span>Переглянуто</span>
+                    </div>
+                  )}
+                  
+                  {/* Оверлей для переглянутих фільмів */}
+                  {movieWatched && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-blue-500/10 z-10">
+                      <div className="bg-blue-500/40 p-4 rounded-full">
+                        <Eye className="h-16 w-16 text-white" />
+                      </div>
+                    </div>
+                  )}
+                  
                   {/* Індикатори свайпу */}
                   {direction === 'right' && (
-                    <div className="absolute top-10 right-10 transform rotate-12 border-4 border-green-500 rounded-md px-4 py-2 bg-green-500/30">
+                    <div className="absolute top-10 right-10 transform rotate-12 border-4 border-green-500 rounded-md px-4 py-2 bg-green-500/30 z-30">
                       <span className="text-white text-xl font-bold">ПОДОБАЄТЬСЯ</span>
                     </div>
                   )}
                   {direction === 'left' && (
-                    <div className="absolute top-10 left-10 transform -rotate-12 border-4 border-red-500 rounded-md px-4 py-2 bg-red-500/30">
+                    <div className="absolute top-10 left-10 transform -rotate-12 border-4 border-red-500 rounded-md px-4 py-2 bg-red-500/30 z-30">
                       <span className="text-white text-xl font-bold">ПРОПУСТИТИ</span>
                     </div>
                   )}
                 </div>
 
                 {/* Інформація про фільм з більш прозорою підложкою і градієнтним переходом */}
-                <div className="absolute bottom-0 left-0 right-0">
+                <div className="absolute bottom-0 left-0 right-0 z-20">
                   {/* Градієнтний перехід, який починається вище на постері */}
                   <div className="absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t from-black/100 via-black/90 to-transparent"></div>
                   
                   {/* Контент з інформацією */}
                   <div className="relative p-3 pb-4">
                     <div className="flex flex-col gap-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         {currentMovie.vote_average ? (
                           <Badge variant="secondary" className="bg-yellow-500/80 text-white">
                             <Star className="w-3 h-3 mr-1" />
@@ -463,6 +556,12 @@ export function MovieSwiper() {
                         {currentMovie.release_date && (
                           <Badge variant="outline" className="bg-black/20 text-white border-none">
                             {formatYear(currentMovie.release_date)}
+                          </Badge>
+                        )}
+                        {movieWatched && (
+                          <Badge variant="secondary" className="bg-blue-500/80 text-white ml-auto">
+                            <Eye className="w-3 h-3 mr-1" />
+                            Переглянуто
                           </Badge>
                         )}
                       </div>
@@ -483,6 +582,25 @@ export function MovieSwiper() {
                         >
                           <ThumbsDown className="h-5 w-5" />
                         </Button>
+
+                        {/* Кнопка переглянуто/не переглянуто */}
+                        <Button
+                          onClick={handleToggleWatched}
+                          variant="default"
+                          size="icon"
+                          className={`rounded-full h-12 w-12 shadow-lg ${
+                            movieWatched ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-500 hover:bg-gray-600'
+                          }`}
+                          disabled={isMarkingWatched}
+                        >
+                          {isMarkingWatched ? (
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                          ) : movieWatched ? (
+                            <EyeOff className="h-5 w-5" />
+                          ) : (
+                            <Eye className="h-5 w-5" />
+                          )}
+                        </Button>
                         
                         <Button
                           onClick={() => {
@@ -492,9 +610,9 @@ export function MovieSwiper() {
                           }}
                           variant="secondary"
                           size="icon"
-                          className="rounded-full h-10 w-10 bg-primary/90 text-primary-foreground shadow-lg"
+                          className="rounded-full h-12 w-12 bg-white text-gray-800 shadow-lg"
                         >
-                          <Info className="h-4 w-4" />
+                          <Info className="h-5 w-5" />
                         </Button>
                         
                         <Button
