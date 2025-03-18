@@ -37,18 +37,21 @@ export async function GET(request: NextRequest) {
     // Трансформуємо властивості для відповідності очікуванням фронтенду
     const transformedWatchlist = watchlist.map(item => ({
       id: item.id,
-      movie_id: item.movieId,
+      movie_id: item.movieId, // Важливо: movie_id для фронтенду
       title: item.title,
       poster_path: item.posterPath,
       release_date: item.releaseDate,
       overview: item.overview,
       vote_average: item.voteAverage,
+      vote_count: item.voteCount,
       created_at: item.createdAt
     }));
+
+    console.log("Повернуто елементів списку перегляду:", transformedWatchlist.length);
     
     return NextResponse.json(transformedWatchlist);
   } catch (error) {
-    console.error('Error fetching watchlist:', error);
+    console.error('Помилка отримання списку перегляду:', error);
     return NextResponse.json(
       { error: 'Failed to fetch watchlist' },
       { status: 500 }
@@ -91,34 +94,70 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Додаємо фільм до списку перегляду
-    await db.insert(emailWatchlistTable)
-      .values({
-        userEmail: user.email.toLowerCase(),
-        movieId: movie.id,
-        title: movie.title,
-        posterPath: movie.poster_path || null,
-        releaseDate: movie.release_date || null,
-        overview: movie.overview || null,
-        voteAverage: movie.vote_average || null,
-      })
-      .onConflictDoUpdate({
-        target: [emailWatchlistTable.movieId, emailWatchlistTable.userEmail],
-        set: {
+    console.log("Додавання фільму до списку перегляду:", {
+      id: movie.id,
+      title: movie.title,
+      vote_count: movie.vote_count,
+      user: user.email.toLowerCase()
+    });
+    
+    // Перевіряємо, чи фільм вже є в списку перегляду
+    const existingMovie = await db.select()
+      .from(emailWatchlistTable)
+      .where(
+        and(
+          eq(emailWatchlistTable.movieId, movie.id),
+          eq(emailWatchlistTable.userEmail, user.email.toLowerCase())
+        )
+      )
+      .limit(1);
+    
+    if (existingMovie.length > 0) {
+      console.log("Фільм вже є в списку перегляду, оновлюємо");
+      
+      // Оновлюємо існуючий запис
+      await db.update(emailWatchlistTable)
+        .set({
           title: movie.title,
           posterPath: movie.poster_path || null,
           releaseDate: movie.release_date || null,
           overview: movie.overview || null,
           voteAverage: movie.vote_average || null,
-        }
-      });
+          voteCount: movie.vote_count !== undefined ? movie.vote_count : null,
+        })
+        .where(
+          and(
+            eq(emailWatchlistTable.movieId, movie.id),
+            eq(emailWatchlistTable.userEmail, user.email.toLowerCase())
+          )
+        );
+        
+      console.log("Фільм успішно оновлено");
+    } else {
+      console.log("Додаємо новий фільм до списку перегляду");
+      
+      // Додаємо новий запис
+      await db.insert(emailWatchlistTable)
+        .values({
+          userEmail: user.email.toLowerCase(),
+          movieId: movie.id,
+          title: movie.title,
+          posterPath: movie.poster_path || null,
+          releaseDate: movie.release_date || null,
+          overview: movie.overview || null,
+          voteAverage: movie.vote_average || null,
+          voteCount: movie.vote_count !== undefined ? movie.vote_count : null,
+        });
+        
+      console.log("Фільм успішно додано");
+    }
     
     return NextResponse.json({ 
       success: true, 
       message: 'Movie added to watchlist' 
     });
   } catch (error) {
-    console.error('Error adding to watchlist:', error);
+    console.error('Помилка додавання до списку перегляду:', error);
     return NextResponse.json(
       { error: 'Failed to add movie to watchlist' },
       { status: 500 }

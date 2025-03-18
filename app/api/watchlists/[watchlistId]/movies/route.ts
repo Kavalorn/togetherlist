@@ -8,7 +8,7 @@ import { eq, and } from 'drizzle-orm';
 // POST - Додавання фільму до списку перегляду
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { watchlistId: string } }
 ) {
   try {
     const supabase = createSupabaseServerClient();
@@ -32,7 +32,7 @@ export async function POST(
       );
     }
 
-    const { id } = params;
+    const { watchlistId: id } = params;
     
     const watchlistId = parseInt(id, 10);
     
@@ -147,7 +147,7 @@ export async function POST(
 // GET - Отримання всіх фільмів зі списку
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { watchlistId: string } }
 ) {
   try {
     const supabase = createSupabaseServerClient();
@@ -171,7 +171,7 @@ export async function GET(
       );
     }
 
-    const { id } = params;
+    const { watchlistId: id } = params;
     
     const watchlistId = parseInt(id, 10);
     

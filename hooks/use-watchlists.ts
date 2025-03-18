@@ -33,9 +33,19 @@ export interface WatchlistMovie {
   priority: number;
 }
 
+// Функція для безпечного перетворення значення на число
+function safeNumberConversion(value: any): number {
+  if (value === undefined || value === null) return 0;
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') return parseInt(value, 10) || 0;
+  return 0;
+}
+
 // Функція для отримання списків перегляду
 const fetchWatchlists = async (token: string | null = null): Promise<Watchlist[]> => {
   if (!token) return [];
+  
+  console.log('Отримання списків перегляду');
   
   const response = await fetch('/api/watchlists', {
     headers: {
@@ -44,15 +54,21 @@ const fetchWatchlists = async (token: string | null = null): Promise<Watchlist[]
   });
   
   if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`Помилка отримання списків перегляду: ${errorText}`);
     throw new Error('Failed to fetch watchlists');
   }
   
-  return response.json();
+  const data = await response.json();
+  console.log(`Отримано ${data.length} списків перегляду`);
+  return data;
 };
 
 // Функція для отримання деталей списку з фільмами
 const fetchWatchlistDetails = async (watchlistId: number, token: string | null = null): Promise<Watchlist> => {
   if (!token) throw new Error('Not authenticated');
+  
+  console.log(`Отримання деталей списку ${watchlistId}`);
   
   const response = await fetch(`/api/watchlists/${watchlistId}`, {
     headers: {
@@ -61,15 +77,21 @@ const fetchWatchlistDetails = async (watchlistId: number, token: string | null =
   });
   
   if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`Помилка отримання деталей списку: ${errorText}`);
     throw new Error('Failed to fetch watchlist details');
   }
   
-  return response.json();
+  const data = await response.json();
+  console.log(`Отримано деталі списку ${watchlistId} із ${data.movies?.length || 0} фільмами`);
+  return data;
 };
 
 // Функція для створення нового списку
 const createWatchlist = async (data: { name: string; description?: string; color?: string; icon?: string }, token: string | null = null) => {
   if (!token) throw new Error('Not authenticated');
+  
+  console.log(`Створення нового списку "${data.name}"`);
   
   const response = await fetch('/api/watchlists', {
     method: 'POST',
@@ -82,10 +104,13 @@ const createWatchlist = async (data: { name: string; description?: string; color
   
   if (!response.ok) {
     const errorData = await response.json();
+    console.error(`Помилка створення списку: ${JSON.stringify(errorData)}`);
     throw new Error(errorData.error || 'Failed to create watchlist');
   }
   
-  return response.json();
+  const result = await response.json();
+  console.log(`Список створено з ID ${result.id}`);
+  return result;
 };
 
 // Функція для оновлення списку
@@ -98,6 +123,8 @@ const updateWatchlist = async (
 ) => {
   if (!token) throw new Error('Not authenticated');
   
+  console.log(`Оновлення списку ${id}`);
+  
   const response = await fetch(`/api/watchlists/${id}`, {
     method: 'PATCH',
     headers: {
@@ -109,15 +136,20 @@ const updateWatchlist = async (
   
   if (!response.ok) {
     const errorData = await response.json();
+    console.error(`Помилка оновлення списку: ${JSON.stringify(errorData)}`);
     throw new Error(errorData.error || 'Failed to update watchlist');
   }
   
-  return response.json();
+  const result = await response.json();
+  console.log(`Список ${id} оновлено`);
+  return result;
 };
 
 // Функція для видалення списку
 const deleteWatchlist = async (id: number, token: string | null = null) => {
   if (!token) throw new Error('Not authenticated');
+  
+  console.log(`Видалення списку ${id}`);
   
   const response = await fetch(`/api/watchlists/${id}`, {
     method: 'DELETE',
@@ -128,10 +160,13 @@ const deleteWatchlist = async (id: number, token: string | null = null) => {
   
   if (!response.ok) {
     const errorData = await response.json();
+    console.error(`Помилка видалення списку: ${JSON.stringify(errorData)}`);
     throw new Error(errorData.error || 'Failed to delete watchlist');
   }
   
-  return response.json();
+  const result = await response.json();
+  console.log(`Список ${id} видалено`);
+  return result;
 };
 
 // Функція для додавання фільму до списку
@@ -141,21 +176,39 @@ const addMovieToWatchlist = async (
 ) => {
   if (!token) throw new Error('Not authenticated');
   
+  // Переконуємося, що vote_count має значення
+  const vote_count = safeNumberConversion(movie.vote_count);
+  
+  console.log(`Додавання фільму ${movie.id} до списку ${watchlistId}`);
+  
   const response = await fetch(`/api/watchlists/${watchlistId}/movies`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`
     },
-    body: JSON.stringify(movie)
+    body: JSON.stringify({
+      id: movie.id,
+      title: movie.title,
+      poster_path: movie.poster_path,
+      release_date: movie.release_date,
+      overview: movie.overview,
+      vote_average: movie.vote_average,
+      vote_count: vote_count,
+      notes: movie.notes,
+      priority: movie.priority
+    })
   });
   
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || 'Failed to add movie to watchlist');
+    const errorText = await response.text();
+    console.error(`Помилка додавання фільму до списку: ${errorText}`);
+    throw new Error('Failed to add movie to watchlist');
   }
   
-  return response.json();
+  const result = await response.json();
+  console.log(`Фільм ${movie.id} додано до списку ${watchlistId}`);
+  return result;
 };
 
 // Функція для видалення фільму зі списку
@@ -165,6 +218,8 @@ const removeMovieFromWatchlist = async (
 ) => {
   if (!token) throw new Error('Not authenticated');
   
+  console.log(`Видалення фільму ${movieId} зі списку ${watchlistId}`);
+  
   const response = await fetch(`/api/watchlists/${watchlistId}/movies/${movieId}`, {
     method: 'DELETE',
     headers: {
@@ -173,11 +228,14 @@ const removeMovieFromWatchlist = async (
   });
   
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || 'Failed to remove movie from watchlist');
+    const errorText = await response.text();
+    console.error(`Помилка видалення фільму зі списку: ${errorText}`);
+    throw new Error('Failed to remove movie from watchlist');
   }
   
-  return response.json();
+  const result = await response.json();
+  console.log(`Фільм ${movieId} видалено зі списку ${watchlistId}`);
+  return result;
 };
 
 // Функція для оновлення деталей фільму в списку
@@ -186,6 +244,8 @@ const updateMovieInWatchlist = async (
   token: string | null = null
 ) => {
   if (!token) throw new Error('Not authenticated');
+  
+  console.log(`Оновлення фільму ${movieId} у списку ${watchlistId}`);
   
   const response = await fetch(`/api/watchlists/${watchlistId}/movies/${movieId}`, {
     method: 'PATCH',
@@ -197,16 +257,21 @@ const updateMovieInWatchlist = async (
   });
   
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || 'Failed to update movie details');
+    const errorText = await response.text();
+    console.error(`Помилка оновлення фільму у списку: ${errorText}`);
+    throw new Error('Failed to update movie details');
   }
   
-  return response.json();
+  const result = await response.json();
+  console.log(`Фільм ${movieId} оновлено у списку ${watchlistId}`);
+  return result;
 };
 
 // Функція для міграції фільмів зі старого списку
 const migrateWatchlist = async (token: string | null = null) => {
   if (!token) throw new Error('Not authenticated');
+  
+  console.log('Початок міграції списку');
   
   const response = await fetch(`/api/migrate-watchlist`, {
     method: 'POST',
@@ -216,11 +281,14 @@ const migrateWatchlist = async (token: string | null = null) => {
   });
   
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || 'Failed to migrate watchlist');
+    const errorText = await response.text();
+    console.error(`Помилка міграції списку: ${errorText}`);
+    throw new Error('Failed to migrate watchlist');
   }
   
-  return response.json();
+  const result = await response.json();
+  console.log(`Міграцію завершено, перенесено ${result.stats?.migratedMovies || 0} фільмів`);
+  return result;
 };
 
 // Хук для роботи зі списками перегляду

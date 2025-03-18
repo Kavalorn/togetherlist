@@ -8,7 +8,7 @@ import { eq, and, ne } from 'drizzle-orm';
 // GET - Отримання конкретного списку та його фільмів
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { watchlistId: string } }
 ) {
   try {
     const supabase = createSupabaseServerClient();
@@ -32,7 +32,7 @@ export async function GET(
       );
     }
 
-    const { id } = params;
+    const { watchlistId: id } = params;
     
     const watchlistId = parseInt(id, 10);
     

@@ -37,11 +37,14 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     const { watchlistId, movieId } = params;
+
+    console.log('Removing movie from watchlist:', watchlistId, movieId);
     
     const parsedWatchlistId = parseInt(watchlistId, 10);
     const parsedMovieId = parseInt(movieId, 10);
     
     if (isNaN(parsedWatchlistId) || isNaN(parsedMovieId)) {
+      console.log('TEST:', parsedWatchlistId, parsedMovieId);
       return NextResponse.json(
         { error: 'Invalid watchlist ID or movie ID' },
         { status: 400 }

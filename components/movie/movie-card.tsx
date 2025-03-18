@@ -130,6 +130,30 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
     }
   };
 
+  const handleToggleWatchlist = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Запобігаємо відкриттю деталей фільму при натисканні на кнопку
+  
+    // Переконуємося, що передаємо всі необхідні дані, включаючи vote_count
+    const movieData = {
+      id: movie.id,
+      title: movie.title,
+      poster_path: movie.poster_path,
+      release_date: movie.release_date,
+      overview: movie.overview,
+      vote_average: voteAverage,
+      vote_count: voteCount // Використовуємо безпечне значення
+    };
+  
+    toggleWatchlist(movieData as any);
+  
+    // Відображаємо повідомлення про успішне додавання/видалення
+    if (isInWatchlist(movie.id)) {
+      toast.success(`"${movie.title}" видалено зі списку перегляду`);
+    } else {
+      toast.success(`"${movie.title}" додано до списку перегляду`);
+    }
+  };
+
   // Компактний варіант картки для списку фільмів актора
   if (variant === 'compact') {
     return (
@@ -161,7 +185,7 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
                       ? 'bg-blue-500 hover:bg-blue-600 text-white'
                       : 'bg-white/80 hover:bg-white text-gray-600 hover:text-gray-800'
                     }`}
-                  onClick={handleToggleWatched}
+                  onClick={handleToggleWatchlist}
                   disabled={isRemovingLocal || isAddingLocal}
                 >
                   {isRemovingLocal || isAddingLocal ? (
@@ -296,7 +320,7 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
                     ? 'bg-blue-500 hover:bg-blue-600 text-white'
                     : 'bg-white/80 hover:bg-white text-gray-600 hover:text-gray-800'
                   }`}
-                onClick={handleToggleWatched}
+                onClick={handleToggleWatchlist}
                 disabled={isRemovingLocal || isAddingLocal}
               >
                 {isRemovingLocal || isAddingLocal ? (
