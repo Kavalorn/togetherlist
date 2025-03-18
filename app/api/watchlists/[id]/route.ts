@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase';
 import { db } from '@/lib/db';
 import { watchlistsTable, watchlistMoviesTable } from '@/lib/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, ne } from 'drizzle-orm';
 
 // GET - Отримання конкретного списку та його фільмів
 export async function GET(
@@ -199,7 +199,7 @@ export async function PATCH(
           and(
             eq(watchlistsTable.userEmail, user.email.toLowerCase()),
             eq(watchlistsTable.name, name),
-            eq(watchlistsTable.id, watchlistId, true) // Не дорівнює поточному ID
+            ne(watchlistsTable.id, watchlistId) // Не дорівнює поточному ID
           )
         )
         .limit(1);

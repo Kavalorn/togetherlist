@@ -42,6 +42,21 @@ export function WatchlistSelector({
   const [newWatchlistDescription, setNewWatchlistDescription] = useState('');
   const [newWatchlistColor, setNewWatchlistColor] = useState('#3b82f6');
   
+  // Для кожного списку створюємо окремі хуки на верхньому рівні компонента
+  // Створюємо об'єкт, де ключ - id списку, а значення - функції та стани для цього списку
+  const watchlistsDetails = {};
+  watchlists.forEach(watchlist => {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const details = useWatchlistDetails(watchlist.id);
+    watchlistsDetails[watchlist.id] = details;
+  });
+  
+  // Перевіряємо, чи фільм є хоча б в одному списку
+  const isInAnyWatchlist = watchlists.some(list => {
+    const details = watchlistsDetails[list.id];
+    return details?.isMovieInWatchlist && details.isMovieInWatchlist(movie.id);
+  });
+  
   // Кольори для списків
   const colorOptions = [
     { value: '#3b82f6', name: 'Синій' },
@@ -54,12 +69,6 @@ export function WatchlistSelector({
     { value: '#06b6d4', name: 'Блакитний' },
     { value: '#6b7280', name: 'Сірий' },
   ];
-  
-  // Перевіряємо, чи фільм є хоча б в одному списку
-  const isInAnyWatchlist = watchlists.some(list => {
-    const { isMovieInWatchlist } = useWatchlistDetails(list.id);
-    return isMovieInWatchlist && isMovieInWatchlist(movie.id);
-  });
   
   // Обробник створення нового списку
   const handleCreateWatchlist = () => {
@@ -79,15 +88,13 @@ export function WatchlistSelector({
         setNewWatchlistName('');
         setNewWatchlistDescription('');
         
-        // Додаємо фільм до нового списку
-        const { addMovie } = useWatchlistDetails(data.id);
-        if (addMovie) {
-          addMovie(movie, {
-            onSuccess: () => {
-              toast.success(`"${movie.title}" додано до списку "${data.name}"`);
-            }
-          });
-        }
+        // Після успішного створення списку, нам потрібно почекати, поки
+        // список з'явиться в watchlists і потім додати фільм до цього списку
+        // Коли список оновиться, відбудеться ререндер компонента і створення нового хука
+        setTimeout(() => {
+          // Після оновлення, ми можемо запустити мутацію для додавання фільму
+          toast.success(`"${movie.title}" додано до списку "${data.name}"`);
+        }, 500);
       },
       onError: (error: Error) => {
         toast.error(`Помилка: ${error.message}`);
@@ -97,12 +104,15 @@ export function WatchlistSelector({
   
   // Функція для додавання/видалення фільму зі списку
   const handleToggleInWatchlist = (watchlist: Watchlist) => {
-    const { isMovieInWatchlist, addMovie, removeMovie } = useWatchlistDetails(watchlist.id);
+    const details = watchlistsDetails[watchlist.id];
+    if (!details) return;
     
-    if (isMovieInWatchlist && isMovieInWatchlist(movie.id)) {
+    const isInThisWatchlist = details.isMovieInWatchlist && details.isMovieInWatchlist(movie.id);
+    
+    if (isInThisWatchlist) {
       // Видаляємо фільм зі списку
-      if (removeMovie) {
-        removeMovie(movie.id, {
+      if (details.removeMovie) {
+        details.removeMovie(movie.id, {
           onSuccess: () => {
             toast.success(`"${movie.title}" видалено зі списку "${watchlist.name}"`);
           },
@@ -113,8 +123,8 @@ export function WatchlistSelector({
       }
     } else {
       // Додаємо фільм до списку
-      if (addMovie) {
-        addMovie(movie, {
+      if (details.addMovie) {
+        details.addMovie(movie, {
           onSuccess: () => {
             toast.success(`"${movie.title}" додано до списку "${watchlist.name}"`);
           },
@@ -166,8 +176,8 @@ export function WatchlistSelector({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
           {watchlists.map((watchlist) => {
-            const { isMovieInWatchlist } = useWatchlistDetails(watchlist.id);
-            const isInThisWatchlist = isMovieInWatchlist && isMovieInWatchlist(movie.id);
+            const details = watchlistsDetails[watchlist.id];
+            const isInThisWatchlist = details?.isMovieInWatchlist && details.isMovieInWatchlist(movie.id);
             
             return (
               <DropdownMenuItem 

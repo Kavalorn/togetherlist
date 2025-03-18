@@ -5,7 +5,8 @@ import { usePathname } from 'next/navigation';
 import { 
   Search, BookmarkIcon, Film, Users, Menu, 
   Shuffle, Archive, Eye, UserCircle, Heart, 
-  Settings, List
+  Settings, List, Inbox, FolderPlus,
+  Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   DropdownMenuGroup,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+  DropdownMenuPortal,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuthStore } from '@/store/auth-store';
@@ -31,6 +36,8 @@ import {
 } from '@/components/ui/dialog';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { useWatchlists } from '@/hooks/use-watchlists';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 export function MainNav() {
   const pathname = usePathname();
@@ -38,6 +45,7 @@ export function MainNav() {
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [signupModalOpen, setSignupModalOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { watchlists, isLoading: isLoadingWatchlists } = useWatchlists();
   
   // Ініціали користувача для аватара
   const userInitials = user?.email
@@ -123,6 +131,70 @@ export function MainNav() {
             </Link>
           ))}
           
+          {/* Дропдаун для списків перегляду (видимий тільки для авторизованих) */}
+          {user && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className={cn(
+                  "text-sm font-medium transition-colors hover:text-primary flex items-center px-2 py-1 rounded-md",
+                  pathname.startsWith("/watchlists") 
+                    ? "text-primary" 
+                    : "text-muted-foreground"
+                )}>
+                  <List className="h-4 w-4 mr-2" />
+                  Списки фільмів
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Ваші списки</DropdownMenuLabel>
+                
+                {isLoadingWatchlists ? (
+                  <DropdownMenuItem disabled>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Завантаження...
+                  </DropdownMenuItem>
+                ) : watchlists.length > 0 ? (
+                  <ScrollArea className="h-[200px]">
+                    {watchlists.map((list) => (
+                      <DropdownMenuItem key={list.id} asChild>
+                        <Link href={`/watchlists/${list.id}`} className="flex items-center">
+                          <div 
+                            className="w-3 h-3 rounded-full mr-2"
+                            style={{ backgroundColor: list.color || '#3b82f6' }}
+                          />
+                          <span>
+                            {list.name}
+                            {list.isDefault && <span className="text-xs ml-1 opacity-70">(за замовчуванням)</span>}
+                          </span>
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
+                  </ScrollArea>
+                ) : (
+                  <DropdownMenuItem disabled>
+                    Немає списків
+                  </DropdownMenuItem>
+                )}
+                
+                <DropdownMenuSeparator />
+                
+                <DropdownMenuItem asChild>
+                  <Link href="/watchlists">
+                    <Inbox className="h-4 w-4 mr-2" />
+                    Всі списки
+                  </Link>
+                </DropdownMenuItem>
+                
+                <DropdownMenuItem asChild>
+                  <Link href="/watchlists/create">
+                    <FolderPlus className="h-4 w-4 mr-2" />
+                    Створити список
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+          
           {/* Дропдаун для колекцій (видимий тільки для авторизованих) */}
           {user && (
             <DropdownMenu>
@@ -133,7 +205,7 @@ export function MainNav() {
                     ? "text-primary" 
                     : "text-muted-foreground"
                 )}>
-                  <List className="h-4 w-4 mr-2" />
+                  <BookmarkIcon className="h-4 w-4 mr-2" />
                   Колекції
                 </Button>
               </DropdownMenuTrigger>
@@ -206,6 +278,65 @@ export function MainNav() {
                         </Link>
                       ))}
                     </div>
+                    
+                    {/* Списки фільмів для мобільного */}
+                    {user && (
+                      <div>
+                        <h3 className="mb-1 text-xs uppercase text-muted-foreground font-semibold">Списки фільмів</h3>
+                        <Link
+                          href="/watchlists"
+                          className={cn(
+                            "flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                            pathname.startsWith("/watchlists") 
+                              ? "bg-primary/10 text-primary" 
+                              : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                          )}
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          <Inbox className="h-4 w-4 mr-2" />
+                          Всі списки
+                        </Link>
+                        
+                        {!isLoadingWatchlists && watchlists.length > 0 && (
+                          <div className="pl-3 mt-1">
+                            {watchlists.slice(0, 5).map((list) => (
+                              <Link
+                                key={list.id}
+                                href={`/watchlists/${list.id}`}
+                                className="flex items-center rounded-md px-3 py-1.5 text-sm transition-colors hover:bg-muted"
+                                onClick={() => setMobileMenuOpen(false)}
+                              >
+                                <div 
+                                  className="w-2 h-2 rounded-full mr-2"
+                                  style={{ backgroundColor: list.color || '#3b82f6' }}
+                                />
+                                <span className="truncate">
+                                  {list.name}
+                                </span>
+                              </Link>
+                            ))}
+                            {watchlists.length > 5 && (
+                              <Link
+                                href="/watchlists"
+                                className="flex items-center rounded-md px-3 py-1.5 text-sm font-medium transition-colors text-muted-foreground hover:text-foreground"
+                                onClick={() => setMobileMenuOpen(false)}
+                              >
+                                <span>+ ще {watchlists.length - 5}</span>
+                              </Link>
+                            )}
+                          </div>
+                        )}
+                        
+                        <Link
+                          href="/watchlists/create"
+                          className="flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-muted text-muted-foreground hover:text-foreground"
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          <FolderPlus className="h-4 w-4 mr-2" />
+                          Створити список
+                        </Link>
+                      </div>
+                    )}
                     
                     {/* Колекції (тільки для авторизованих) */}
                     {user && (
@@ -311,6 +442,13 @@ export function MainNav() {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
+                  <DropdownMenuItem asChild>
+                    <Link href="/watchlists">
+                      <Inbox className="h-4 w-4 mr-2" />
+                      Списки фільмів
+                    </Link>
+                  </DropdownMenuItem>
+                  
                   {authNavItems.map((item) => (
                     <DropdownMenuItem key={item.href} asChild>
                       <Link href={item.href} className="cursor-pointer">
