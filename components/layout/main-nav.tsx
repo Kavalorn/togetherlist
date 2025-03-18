@@ -1,4 +1,3 @@
-// components/layout/main-nav.tsx
 'use client';
 
 import Link from 'next/link';
@@ -31,6 +30,7 @@ import {
   DialogTitle 
 } from '@/components/ui/dialog';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export function MainNav() {
   const pathname = usePathname();
@@ -160,6 +160,9 @@ export function MainNav() {
         </nav>
         
         <div className="ml-auto flex items-center gap-4">
+          {/* Кнопка зміни теми */}
+          <ThemeToggle />
+          
           {/* Кнопка мобільного меню */}
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild className="md:hidden">
@@ -226,6 +229,15 @@ export function MainNav() {
                         ))}
                       </div>
                     )}
+                    
+                    {/* Налаштування та тема в мобільному меню */}
+                    <div className="mt-4">
+                      <h3 className="mb-1 text-xs uppercase text-muted-foreground font-semibold">Налаштування</h3>
+                      <div className="flex items-center justify-between rounded-md px-3 py-2">
+                        <span className="text-sm font-medium">Тема</span>
+                        <ThemeToggle />
+                      </div>
+                    </div>
                   </nav>
                 </div>
                 
