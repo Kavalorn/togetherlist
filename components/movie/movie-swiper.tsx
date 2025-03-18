@@ -621,6 +621,19 @@ export function MovieSwiper() {
                           )}
                         </Button>
 
+                        <Button
+                          onClick={() => {
+                            if (movieDetails) {
+                              openMovieDetailsModal(movieDetails);
+                            }
+                          }}
+                          variant="secondary"
+                          size="icon"
+                          className="rounded-full h-12 w-12 bg-white text-gray-800 shadow-lg"
+                        >
+                          <Info className="h-5 w-5" />
+                        </Button>
+
                         {/* Кнопка переглянуто/не переглянуто */}
                         <Button
                           onClick={handleToggleWatched}
@@ -639,18 +652,7 @@ export function MovieSwiper() {
                           )}
                         </Button>
 
-                        <Button
-                          onClick={() => {
-                            if (movieDetails) {
-                              openMovieDetailsModal(movieDetails);
-                            }
-                          }}
-                          variant="secondary"
-                          size="icon"
-                          className="rounded-full h-12 w-12 bg-white text-gray-800 shadow-lg"
-                        >
-                          <Info className="h-5 w-5" />
-                        </Button>
+
 
                         <Button
                           onClick={handleButtonLike}
