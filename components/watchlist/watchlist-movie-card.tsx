@@ -61,14 +61,8 @@ export function WatchlistMovieCard({ movie, watchlistId }: WatchlistMovieCardPro
   // Функція для видалення фільму зі списку
   const handleRemoveFromWatchlist = () => {
     if (removeMovie) {
-      removeMovie(movie.movie_id, {
-        onSuccess: () => {
-          toast.success(`"${movie.title}" видалено зі списку перегляду`);
-        },
-        onError: (error: Error) => {
-          toast.error(`Помилка: ${error.message}`);
-        }
-      });
+      removeMovie(movie.movie_id);
+      toast.success(`"${movie.title}" видалено зі списку перегляду`);
     }
   };
   
@@ -78,16 +72,9 @@ export function WatchlistMovieCard({ movie, watchlistId }: WatchlistMovieCardPro
     
     if (movieWatched) {
       // Видаляємо зі списку переглянутих
-      removeFromWatched(movie.movie_id, {
-        onSuccess: () => {
-          toast.success(`"${movie.title}" прибрано з переглянутих фільмів`);
-          setIsMarkingWatched(false);
-        },
-        onError: (error: any) => {
-          toast.error(`Помилка: ${error.message}`);
-          setIsMarkingWatched(false);
-        }
-      });
+      removeFromWatched(movie.movie_id);
+      toast.success(`"${movie.title}" прибрано з переглянутих фільмів`);
+      setIsMarkingWatched(false);
     } else {
       // Додаємо до переглянутих
       const movieData = {
@@ -100,36 +87,23 @@ export function WatchlistMovieCard({ movie, watchlistId }: WatchlistMovieCardPro
         vote_count: movie.vote_count || 0
       };
       
-      markAsWatched({ movie: movieData as any }, {
-        onSuccess: () => {
-          toast.success(`"${movie.title}" позначено як переглянутий`);
-          setIsMarkingWatched(false);
-        },
-        onError: (error: any) => {
-          toast.error(`Помилка: ${error.message}`);
-          setIsMarkingWatched(false);
-        }
-      });
+      markAsWatched({ movie: movieData });
+      toast.success(`"${movie.title}" позначено як переглянутий`);
+      setIsMarkingWatched(false);
     }
   };
   
-  // Функція для збереження нотаток
-  const handleSaveNotes = () => {
-    if (updateMovie) {
-      updateMovie({
-        movieId: movie.movie_id,
-        data: { notes }
-      }, {
-        onSuccess: () => {
-          toast.success(`Нотатки до фільму "${movie.title}" збережено`);
-          setIsNotesDialogOpen(false);
-        },
-        onError: (error: Error) => {
-          toast.error(`Помилка: ${error.message}`);
-        }
-      });
-    }
-  };
+// Функція для збереження нотаток
+const handleSaveNotes = () => {
+  if (updateMovie) {
+    updateMovie({
+      movieId: movie.movie_id,
+      data: { notes }
+    });
+    toast.success(`Нотатки до фільму "${movie.title}" збережено`);
+    setIsNotesDialogOpen(false);
+  }
+};
   
   return (
     <>

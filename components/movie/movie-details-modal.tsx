@@ -94,14 +94,8 @@ export function MovieDetailsModal() {
   const handleMarkAsWatched = () => {
     if (movieWatched) {
       // Видаляємо з переглянутих
-      removeFromWatched(selectedMovie.id, {
-        onSuccess: () => {
-          toast.success(`"${selectedMovie.title}" прибрано з переглянутих фільмів`);
-        },
-        onError: (error: Error) => {
-          toast.error(`Помилка: ${error.message}`);
-        }
-      });
+      removeFromWatched(selectedMovie.id);
+      toast.success(`"${selectedMovie.title}" прибрано з переглянутих фільмів`);
     } else {
       // Позначаємо як переглянутий
       const movieData = {
@@ -114,14 +108,8 @@ export function MovieDetailsModal() {
         vote_count: voteCount
       };
 
-      markAsWatched({ movie: movieData }, {
-        onSuccess: () => {
-          toast.success(`"${selectedMovie.title}" позначено як переглянутий`);
-        },
-        onError: (error: Error) => {
-          toast.error(`Помилка: ${error.message}`);
-        }
-      });
+      markAsWatched({ movie: movieData });
+      toast.success(`"${selectedMovie.title}" позначено як переглянутий`);
     }
   };
 

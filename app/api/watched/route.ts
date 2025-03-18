@@ -100,7 +100,39 @@ export async function POST(request: NextRequest) {
     });
     
     // Добавляємо фільм до списку переглянутих
-    const result = await db.insert(watchedMoviesTable)
+    const existingRecord = await db.select()
+    .from(watchedMoviesTable)
+    .where(
+      and(
+        eq(watchedMoviesTable.movieId, movie.id),
+        eq(watchedMoviesTable.userEmail, user.email.toLowerCase())
+      )
+    )
+    .limit(1);
+  
+  if (existingRecord.length > 0) {
+    // Якщо запис існує, оновлюємо його
+    await db.update(watchedMoviesTable)
+      .set({
+        title: movie.title,
+        posterPath: movie.poster_path || null,
+        releaseDate: movie.release_date || null,
+        overview: movie.overview || null,
+        voteAverage: movie.vote_average || null,
+        voteCount: movie.vote_count || null,
+        watchedAt: new Date(),
+        comment: movie.comment || null,
+        rating: movie.rating || null
+      })
+      .where(
+        and(
+          eq(watchedMoviesTable.movieId, movie.id),
+          eq(watchedMoviesTable.userEmail, user.email.toLowerCase())
+        )
+      );
+  } else {
+    // Якщо запису немає, створюємо новий
+    await db.insert(watchedMoviesTable)
       .values({
         userEmail: user.email.toLowerCase(),
         movieId: movie.id,
@@ -112,32 +144,8 @@ export async function POST(request: NextRequest) {
         voteCount: movie.vote_count || null,
         comment: movie.comment || null,
         rating: movie.rating || null
-      })
-      .onConflictDoUpdate({
-        target: [watchedMoviesTable.movieId, watchedMoviesTable.userEmail],
-        set: {
-          title: movie.title,
-          posterPath: movie.poster_path || null,
-          releaseDate: movie.release_date || null,
-          overview: movie.overview || null,
-          voteAverage: movie.vote_average || null,
-          voteCount: movie.vote_count || null,
-          watchedAt: new Date(),
-          comment: movie.comment || null,
-          rating: movie.rating || null
-        }
       });
-    
-    // Якщо фільм був у списку перегляду, видаляємо його звідти
-    if (movie.removeFromWatchlist !== false) {
-      await db.delete(emailWatchlistTable)
-        .where(
-          and(
-            eq(emailWatchlistTable.movieId, movie.id),
-            eq(emailWatchlistTable.userEmail, user.email.toLowerCase())
-          )
-        );
-    }
+  }
     
     return NextResponse.json({ 
       success: true, 

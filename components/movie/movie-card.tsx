@@ -94,18 +94,10 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
   const handleRemoveFromWatched = () => {
     setIsRemovingLocal(true);
 
-    // Тут викликаємо функцію removeFromWatched з TanStack Query
-    // зі специфічними опціями onSuccess та onError
-    removeFromWatched(movie.id, {
-      onSuccess: () => {
-        toast.success(`"${movie.title}" прибрано з переглянутих фільмів`);
-        setIsRemovingLocal(false);
-      },
-      onError: (error: any) => {
-        toast.error(`Помилка: ${error.message || 'Не вдалося видалити фільм'}`);
-        setIsRemovingLocal(false);
-      }
-    });
+    // Видаляємо фільм зі списку переглянутих
+    removeFromWatched(movie.id);
+    toast.success(`"${movie.title}" прибрано з переглянутих фільмів`);
+    setIsRemovingLocal(false);
   };
 
   // Обробник додавання фільму до списку переглянутих
@@ -122,16 +114,9 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
       vote_count: voteCount
     };
 
-    markAsWatched({ movie: movieData as any }, {
-      onSuccess: () => {
-        toast.success(`"${movie.title}" позначено як переглянутий`);
-        setIsAddingLocal(false);
-      },
-      onError: (error: any) => {
-        toast.error(`Помилка: ${error.message || 'Не вдалося додати фільм'}`);
-        setIsAddingLocal(false);
-      }
-    });
+    markAsWatched({ movie: movieData, options: {} });
+    toast.success(`"${movie.title}" позначено як переглянутий`);
+    setIsAddingLocal(false);
   };
 
   // Обробник для кнопки зміни статусу перегляду (око)
