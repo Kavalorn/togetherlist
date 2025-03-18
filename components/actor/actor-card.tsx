@@ -33,16 +33,27 @@ export function ActorCard({ actor, variant = 'default' }: ActorCardProps) {
 
   // Обробник додавання до улюблених
   const handleToggleFavorite = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Запобігаємо переходу на сторінку актора
-    
-    toggleFavorite(actor);
-    
-    // Показуємо повідомлення
-    if (isFavorite) {
-      toast.success(`${actor.name} видалено з улюблених акторів`);
-    } else {
-      toast.success(`${actor.name} додано до улюблених акторів`);
-    }
+    e.stopPropagation(); // Prevent navigation to actor page
+  
+  console.log("Toggling favorite for actor:", actor.id, actor.name);
+  
+  // Ensure we have all required actor data
+  const actorData: any = {
+    id: actor.id,
+    name: actor.name,
+    profile_path: actor.profile_path || null,
+    known_for_department: actor.known_for_department || null,
+    popularity: actor.popularity !== undefined ? actor.popularity : null
+  };
+  
+  toggleFavorite(actorData);
+  
+  // Show notification
+  if (isFavorite) {
+    toast.success(`${actor.name} removed from favorite actors`);
+  } else {
+    toast.success(`${actor.name} added to favorite actors`);
+  }
   };
 
   // Компактний варіант для представлення в сітці

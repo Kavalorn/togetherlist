@@ -12,12 +12,18 @@ type RouteParams = {
 };
 
 // DELETE - Видалення фільму зі списку перегляду
-export async function DELETE(request: NextRequest, context: RouteParams) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
+    console.log('DELETE request received with params:', params);
+    
     const supabase = createSupabaseServerClient();
     
     const authHeader = request.headers.get('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log('Unauthorized: missing or invalid Authorization header');
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -29,31 +35,46 @@ export async function DELETE(request: NextRequest, context: RouteParams) {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     
     if (authError || !user || !user.email) {
+      console.log('Invalid token:', authError);
       return NextResponse.json(
         { error: 'Invalid token' },
         { status: 401 }
       );
     }
 
-    const { id } = context.params;
+    const { id } = params;
+    console.log(`Received ID parameter: "${id}"`);
+    
+    if (!id) {
+      console.error('Missing ID parameter');
+      return NextResponse.json(
+        { error: 'Missing movie ID' },
+        { status: 400 }
+      );
+    }
     
     const movieId = parseInt(id, 10);
+    console.log(`Parsed movie ID: ${movieId}`);
     
     if (isNaN(movieId)) {
+      console.error(`Invalid movie ID: "${id}"`);
       return NextResponse.json(
         { error: 'Invalid movie ID' },
         { status: 400 }
       );
     }
     
-    // Видаляємо фільм зі списку перегляду для цього користувача
-    await db.delete(emailWatchlistTable)
+    console.log(`Attempting to delete movie ${movieId} for user ${user.email.toLowerCase()}`);
+    
+    const result = await db.delete(emailWatchlistTable)
       .where(
         and(
           eq(emailWatchlistTable.movieId, movieId),
           eq(emailWatchlistTable.userEmail, user.email.toLowerCase())
         )
       );
+    
+    console.log('Delete operation completed:', result);
     
     return NextResponse.json({ 
       success: true, 

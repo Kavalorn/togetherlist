@@ -11,10 +11,8 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Створюємо серверний клієнт Supabase
     const supabase = createSupabaseServerClient();
     
-    // Отримуємо токен з заголовка запиту
     const authHeader = request.headers.get('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
@@ -25,7 +23,6 @@ export async function DELETE(
     
     const token = authHeader.replace('Bearer ', '');
     
-    // Верифікуємо токен та отримуємо користувача
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     
     if (authError || !user || !user.email) {
@@ -37,6 +34,8 @@ export async function DELETE(
 
     const { id } = params;
     
+    console.log(`Processing DELETE request for movie ID: ${id}`);
+    
     const movieId = parseInt(id, 10);
     
     if (isNaN(movieId)) {
@@ -47,13 +46,17 @@ export async function DELETE(
     }
     
     // Видаляємо фільм зі списку перегляду для цього користувача
-    await db.delete(emailWatchlistTable)
+    console.log(`Deleting movie ${movieId} for user ${user.email.toLowerCase()}`);
+    
+    const result = await db.delete(emailWatchlistTable)
       .where(
         and(
           eq(emailWatchlistTable.movieId, movieId),
           eq(emailWatchlistTable.userEmail, user.email.toLowerCase())
         )
       );
+    
+    console.log('Delete result:', result);
     
     return NextResponse.json({ 
       success: true, 

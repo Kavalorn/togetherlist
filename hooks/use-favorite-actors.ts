@@ -11,7 +11,7 @@ export function useFavoriteActors() {
   const token = useAuthStore(state => state.session?.access_token);
   const isAuthenticated = useAuthStore(state => !!state.session);
   
-  // Запит на отримання списку улюблених акторів
+  // Query to get the list of favorite actors
   const favoriteActorsQuery = useQuery({
     queryKey: ['favorite-actors'],
     queryFn: async () => {
@@ -32,12 +32,12 @@ export function useFavoriteActors() {
     enabled: isAuthenticated,
   });
   
-  // Мутація для додавання актора до улюблених
+  // Mutation to add an actor to favorites
   const addMutation = useMutation({
     mutationFn: async (actor: Person | PersonDetails) => {
       if (!token) throw new Error('Not authenticated');
       
-      // Підготовка даних актора, обробка null значень
+      // Prepare actor data, handle null values
       const actorData = {
         id: actor.id,
         name: actor.name,
@@ -47,6 +47,8 @@ export function useFavoriteActors() {
           ? actor.popularity 
           : null
       };
+      
+      console.log("Adding actor to favorites:", actorData);
       
       const response = await fetch('/api/favorite-actors', {
         method: 'POST',
@@ -58,21 +60,24 @@ export function useFavoriteActors() {
       });
       
       if (!response.ok) {
-        throw new Error('Failed to add to favorites');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to add to favorites');
       }
       
       return response.json();
     },
     onSuccess: () => {
-      // Інвалідація кешу після успішного додавання
+      // Invalidate cache after successful addition
       queryClient.invalidateQueries({ queryKey: ['favorite-actors'] });
     },
   });
   
-  // Мутація для видалення актора з улюблених
+  // Mutation to remove an actor from favorites
   const removeMutation = useMutation({
     mutationFn: async (actorId: number) => {
       if (!token) throw new Error('Not authenticated');
+      
+      console.log("Removing actor from favorites:", actorId);
       
       const response = await fetch(`/api/favorite-actors/${actorId}`, {
         method: 'DELETE',
@@ -88,12 +93,12 @@ export function useFavoriteActors() {
       return response.json();
     },
     onSuccess: () => {
-      // Інвалідація кешу після успішного видалення
+      // Invalidate cache after successful deletion
       queryClient.invalidateQueries({ queryKey: ['favorite-actors'] });
     },
   });
   
-  // Перевірка чи актор у списку улюблених
+  // Check if an actor is in the favorites list
   const isInFavorites = (actorId: number) => {
     if (!favoriteActorsQuery.data) return false;
     return favoriteActorsQuery.data.some((actor: any) => {
@@ -102,8 +107,10 @@ export function useFavoriteActors() {
     });
   };
   
-  // Функція для переключення статусу улюбленого актора
+  // Function to toggle favorite status of an actor
   const toggleFavorite = (actor: Person | PersonDetails) => {
+    console.log("Toggle favorite for actor:", actor.id, isInFavorites(actor.id));
+    
     if (isInFavorites(actor.id)) {
       removeMutation.mutate(actor.id);
     } else {
