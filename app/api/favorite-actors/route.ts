@@ -6,6 +6,56 @@ import { favoriteActorsTable } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 
 // GET - Отримання списку улюблених акторів для поточного користувача
+export async function GET(request: NextRequest) {
+  try {
+    const supabase = createSupabaseServerClient();
+    
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+    
+    const token = authHeader.replace('Bearer ', '');
+    
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !user || !user.email) {
+      return NextResponse.json(
+        { error: 'Invalid token' },
+        { status: 401 }
+      );
+    }
+    
+    // Отримуємо список улюблених акторів з бази даних для цього користувача
+    const favoriteActors = await db.select().from(favoriteActorsTable)
+      .where(eq(favoriteActorsTable.userEmail, user.email.toLowerCase()))
+      .orderBy(favoriteActorsTable.createdAt);
+    
+    // Трансформуємо властивості для відповідності очікуванням фронтенду
+    const transformedActors = favoriteActors.map(item => ({
+      id: item.id,
+      actor_id: item.actorId,
+      name: item.actorName,
+      profile_path: item.profilePath,
+      known_for_department: item.knownForDepartment,
+      popularity: item.popularity,
+      created_at: item.createdAt
+    }));
+    
+    return NextResponse.json(transformedActors);
+  } catch (error) {
+    console.error('Error fetching favorite actors:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch favorite actors' },
+      { status: 500 }
+    );
+  }
+}
+
+// POST - Додавання актора до улюблених
 export async function POST(request: NextRequest) {
     try {
       const supabase = createSupabaseServerClient();

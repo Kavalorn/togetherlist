@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Search, BookmarkIcon, Film, Users, Menu, X, Shuffle, Archive, Eye } from 'lucide-react';
+import { Search, BookmarkIcon, Film, Users, Menu, X, Shuffle, Archive, Eye, UserCircle, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
@@ -47,7 +47,7 @@ export function MainNav() {
   const navItems = [
     {
       href: "/",
-      label: "Пошук",
+      label: "Пошук фільмів",
       icon: <Search className="h-4 w-4 mr-2" />,
       isActive: pathname === "/"
     },
@@ -56,6 +56,12 @@ export function MainNav() {
       label: "Відкрийте",
       icon: <Shuffle className="h-4 w-4 mr-2" />,
       isActive: pathname === "/discover"
+    },
+    {
+      href: "/actors",
+      label: "Актори",
+      icon: <UserCircle className="h-4 w-4 mr-2" />,
+      isActive: pathname === "/actors" || pathname.startsWith("/actor/")
     },
     {
       href: "/watchlist",
@@ -68,6 +74,13 @@ export function MainNav() {
       label: "Архів",
       icon: <Eye className="h-4 w-4 mr-2" />,
       isActive: pathname === "/archive",
+      requireAuth: true
+    },
+    {
+      href: "/favorite-actors",
+      label: "Улюблені актори",
+      icon: <Heart className="h-4 w-4 mr-2" />,
+      isActive: pathname === "/favorite-actors",
       requireAuth: true
     },
     {
@@ -230,6 +243,12 @@ export function MainNav() {
                   <Link href="/archive" className="cursor-pointer">
                     <Eye className="h-4 w-4 mr-2" />
                     Архів переглянутих
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/favorite-actors" className="cursor-pointer">
+                    <Heart className="h-4 w-4 mr-2" />
+                    Улюблені актори
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>

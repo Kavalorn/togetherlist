@@ -103,7 +103,7 @@ export function ActorCard({ actor, variant = 'default' }: ActorCardProps) {
   // Повний варіант картки для результатів пошуку
   return (
     <Card 
-      className="overflow-hidden hover:shadow-md transition-shadow duration-200 cursor-pointer flex flex-col"
+      className="overflow-hidden hover:shadow-md transition-shadow duration-200 cursor-pointer flex flex-col p-0"
       onClick={handleCardClick}
     >
       <div className="relative aspect-[2/3] w-full">
@@ -161,7 +161,7 @@ export function ActorCard({ actor, variant = 'default' }: ActorCardProps) {
         )}
         
         {actor.known_for && Array.isArray(actor.known_for) && actor.known_for.length > 0 && (
-            <div className="mt-2">
+            <div className="my-2">
                 <p className="text-sm text-muted-foreground mb-1">Відомий за:</p>
                 <div className="flex flex-wrap gap-1">
                 {actor.known_for.slice(0, 3).map((work: any) => (
