@@ -52,7 +52,7 @@ export const emailWatchlistTable = pgTable('email_watchlist', {
   }
 });
 
-// Нова схема для переглянутих фільмів
+// схема для переглянутих фільмів
 export const watchedMoviesTable = pgTable('watched_movies', {
   id: serial('id').primaryKey(),
   userEmail: text('user_email').notNull(),
@@ -72,6 +72,23 @@ export const watchedMoviesTable = pgTable('watched_movies', {
   }
 });
 
+// Схема для улюблених акторів
+export const favoriteActorsTable = pgTable('favorite_actors', {
+  id: serial('id').primaryKey(),
+  userEmail: text('user_email').notNull(),
+  actorId: integer('actor_id').notNull(),
+  actorName: text('actor_name').notNull(),
+  profilePath: text('profile_path'),
+  knownForDepartment: text('known_for_department'),
+  popularity: real('popularity'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow()
+}, (table) => {
+  return {
+    // Унікальний індекс для запобігання дублювання акторів для одного користувача
+    actorIdIdx: uniqueIndex('actor_id_user_email_idx').on(table.actorId, table.userEmail),
+  }
+});
+
 // Типи на основі схеми
 export type Watchlist = typeof watchlistTable.$inferSelect;
 export type NewWatchlistEntry = typeof watchlistTable.$inferInsert;
@@ -84,3 +101,6 @@ export type NewEmailWatchlistEntry = typeof emailWatchlistTable.$inferInsert;
 
 export type WatchedMovie = typeof watchedMoviesTable.$inferSelect;
 export type NewWatchedMovie = typeof watchedMoviesTable.$inferInsert;
+
+export type FavoriteActor = typeof favoriteActorsTable.$inferSelect;
+export type NewFavoriteActor = typeof favoriteActorsTable.$inferInsert;

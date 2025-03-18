@@ -1,3 +1,4 @@
+// app/layout.tsx - оновлена версія з додаванням ActorDetailsModal
 import './globals.css';
 import { Inter } from 'next/font/google';
 import { MainNav } from '@/components/layout/main-nav';
@@ -5,6 +6,7 @@ import { ThemeProvider } from '@/components/layout/theme-provider';
 import TanstackQueryProvider from '@/components/providers/query-provider';
 import { Toaster } from '@/components/ui/sonner';
 import { MovieDetailsModal } from '@/components/movie/movie-details-modal';
+import { ActorDetailsModal } from '@/components/actor/actor-details-modal';
 
 const inter = Inter({ subsets: ['latin', 'cyrillic'], variable: '--font-sans' });
 
@@ -39,6 +41,7 @@ export default function RootLayout({
               <MainNav />
               <main className="flex-1 container mx-auto py-8 px-4">{children}</main>
               <MovieDetailsModal />
+              <ActorDetailsModal />
               <Toaster />
             </div>
           </TanstackQueryProvider>

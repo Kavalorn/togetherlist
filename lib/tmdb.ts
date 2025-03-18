@@ -29,8 +29,22 @@ export interface MovieDetails extends Movie {
 export interface Person {
   id: number;
   name: string;
-  profile_path?: string;
+  profile_path?: string | null;
   known_for_department?: string;
+  popularity?: number;
+  adult?: boolean;
+  gender?: number;
+  // Масив фільмів/серіалів, у яких відома особа
+  known_for?: Array<{
+    id: number;
+    title?: string;
+    name?: string;
+    media_type?: 'movie' | 'tv';
+    poster_path?: string | null;
+    release_date?: string;
+    first_air_date?: string;
+    vote_average?: number;
+  }>;
 }
 
 // Тип для актора у фільмі
@@ -49,11 +63,13 @@ export interface Crew extends Person {
 
 // Детальна інформація про особу
 export interface PersonDetails extends Person {
-  birthday?: string;
-  deathday?: string;
+  birthday?: string | null;
+  deathday?: string | null;
+  also_known_as?: string[];
   biography?: string;
-  place_of_birth?: string;
-  gender?: number;
+  place_of_birth?: string | null;
+  imdb_id?: string;
+  homepage?: string | null;
 }
 
 // Типи для фільмів в фільмографії актора
@@ -278,6 +294,40 @@ export const tmdbApi = {
       '/movie/now_playing',
       { page: page.toString(), ...showLanguage }
     ),
+
+  // Функція для пошуку людей (акторів, режисерів, тощо)
+searchPeople: async (query: string, page = 1) => {
+  const result = await fetchFromTMDB<{ results: Person[]; total_results: number; total_pages: number }>(
+    '/search/person',
+    { query, page: page.toString(), ...showLanguage }
+  );
+  
+  // Додаткове логування для відлагодження
+  console.log("Результати пошуку людей:", result.results.map(person => ({
+    id: person.id,
+    name: person.name,
+    popularity: person.popularity
+  })));
+  
+  return result;
+},
+
+// Функція для отримання популярних акторів
+getPopularPeople: async (page = 1) => {
+  const result = await fetchFromTMDB<{ results: Person[]; total_results: number; total_pages: number }>(
+    '/person/popular',
+    { page: page.toString(), ...showLanguage }
+  );
+  
+  // Додаткове логування для відлагодження
+  console.log("Популярні актори:", result.results.map(person => ({
+    id: person.id,
+    name: person.name,
+    popularity: person.popularity
+  })));
+  
+  return result;
+},
 
   getMovieTranslations: (id: number) =>
     fetchFromTMDB<MovieTranslations>(`/movie/${id}/translations`),

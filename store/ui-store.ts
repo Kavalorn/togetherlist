@@ -1,4 +1,5 @@
-'use client';
+// Оновлення для store/ui-store.ts
+// Додаємо підтримку модального вікна з деталями актора
 
 import { create } from 'zustand';
 import { MovieDetails, Person, PersonDetails } from '@/lib/tmdb';
@@ -8,10 +9,10 @@ interface UIState {
   isLoginModalOpen: boolean;
   isSignupModalOpen: boolean;
   isMovieDetailsModalOpen: boolean;
-  isActorModalOpen: boolean;
+  isActorDetailsModalOpen: boolean;
   
   // Стан вкладок
-  activeTab: 'search' | 'watchlist' | 'actor';
+  activeTab: 'search' | 'watchlist' | 'actor' | 'actors';
   
   // Дані для модальних вікон
   selectedMovie: MovieDetails | null;
@@ -19,6 +20,7 @@ interface UIState {
   
   // Пошук
   searchQuery: string;
+  actorSearchQuery: string;
   
   // Методи
   openLoginModal: () => void;
@@ -29,11 +31,12 @@ interface UIState {
   openMovieDetailsModal: (movie: MovieDetails) => void;
   closeMovieDetailsModal: () => void;
   
-  openActorModal: (actor: PersonDetails) => void;
-  closeActorModal: () => void;
+  openActorDetailsModal: (actor: PersonDetails) => void;
+  closeActorDetailsModal: () => void;
   
-  setActiveTab: (tab: 'search' | 'watchlist' | 'actor') => void;
+  setActiveTab: (tab: 'search' | 'watchlist' | 'actor' | 'actors') => void;
   setSearchQuery: (query: string) => void;
+  setActorSearchQuery: (query: string) => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -41,7 +44,7 @@ export const useUIStore = create<UIState>((set) => ({
   isLoginModalOpen: false,
   isSignupModalOpen: false,
   isMovieDetailsModalOpen: false,
-  isActorModalOpen: false,
+  isActorDetailsModalOpen: false,
   
   activeTab: 'search',
   
@@ -49,6 +52,7 @@ export const useUIStore = create<UIState>((set) => ({
   selectedActor: null,
   
   searchQuery: '',
+  actorSearchQuery: '',
   
   // Методи для модальних вікон
   openLoginModal: () => set({ isLoginModalOpen: true, isSignupModalOpen: false }),
@@ -66,15 +70,17 @@ export const useUIStore = create<UIState>((set) => ({
     selectedMovie: null
   }),
   
-  openActorModal: (actor) => set({ 
+  openActorDetailsModal: (actor) => set({ 
     selectedActor: actor, 
-    isActorModalOpen: true 
+    isActorDetailsModalOpen: true 
   }),
-  closeActorModal: () => set({ 
-    isActorModalOpen: false
+  closeActorDetailsModal: () => set({ 
+    isActorDetailsModalOpen: false,
+    selectedActor: null
   }),
   
   // Методи для навігації
   setActiveTab: (tab) => set({ activeTab: tab }),
   setSearchQuery: (query) => set({ searchQuery: query }),
+  setActorSearchQuery: (query) => set({ actorSearchQuery: query }),
 }));

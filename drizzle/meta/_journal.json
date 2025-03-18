@@ -50,6 +50,13 @@
       "when": 1741997797129,
       "tag": "0006_fat_sprite",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1742315110186,
+      "tag": "0007_deep_red_wolf",
+      "breakpoints": true
     }
   ]
 }
