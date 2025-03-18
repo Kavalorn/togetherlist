@@ -25,6 +25,7 @@ import { useMovieTrailer } from '@/hooks/use-movie-trailer';
 import { useMovieTranslations } from '@/hooks/use-movie-translations';
 import { LanguageSelector } from './language-selector';
 import { Globe } from 'lucide-react';
+import { WatchlistSelector } from '../watchlist/watchlist-selector';
 
 // Функція для безпечного перетворення значення на число
 function safeNumberConversion(value: any): number {
@@ -218,23 +219,11 @@ export function MovieDetailsModal() {
                   </Button>
                 </div>
 
-                <Button
-                  variant={isInWatchlist(selectedMovie.id) ? "default" : "outline"}
-                  className={`w-full ${isInWatchlist(selectedMovie.id) ? "bg-yellow-600 hover:bg-yellow-700" : ""}`}
-                  onClick={handleAddToWatchlist}
-                >
-                  {isInWatchlist(selectedMovie.id) ? (
-                    <>
-                      <BookmarkCheck className="mr-2 h-5 w-5" />
-                      В списку
-                    </>
-                  ) : (
-                    <>
-                      <Bookmark className="mr-2 h-5 w-5" />
-                      До списку
-                    </>
-                  )}
-                </Button>
+                <WatchlistSelector 
+                  movie={selectedMovie} 
+                  variant="outline" 
+                  className="w-full" 
+                />
 
                 <Button
                   variant="secondary"

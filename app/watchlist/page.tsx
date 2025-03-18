@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { BookmarkX, Loader2, Search, Info, Archive } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { MigrateWatchlistButton } from '@/components/watchlist/migrate-watchlist-button';
 
 // Функція для безпечного перетворення значення на число
 function safeNumberConversion(value: any): number {
@@ -88,6 +89,7 @@ function WatchlistContent() {
         </div>
         
         <div className="flex flex-col sm:flex-row items-center gap-2 sm:ml-auto w-full sm:w-auto">
+          <MigrateWatchlistButton />
           <Button onClick={() => router.push('/archive')} variant="outline" className="w-full sm:w-auto">
             <Archive className="mr-2 h-4 w-4" />
             Архів

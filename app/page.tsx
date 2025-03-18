@@ -9,6 +9,7 @@ import { Loader2, Search, TrendingUp } from 'lucide-react';
 import { useSearchMovies, usePopularMovies } from '@/hooks/use-movies';
 import { useAuthStore } from '@/store/auth-store';
 import { MoviesList } from '@/components/movie/movies-list';
+import { MigrateWatchlistButton } from '@/components/watchlist/migrate-watchlist-button';
 
 // Головний компонент сторінки, обгорнутий у Suspense
 export default function HomePage() {

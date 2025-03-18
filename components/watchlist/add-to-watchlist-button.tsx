@@ -34,8 +34,6 @@ export function AddToWatchlistButton({
   const { watchlists, isLoading: isLoadingWatchlists } = useWatchlists();
   const [isSelectDialogOpen, setIsSelectDialogOpen] = useState(false);
   const [selectedWatchlistId, setSelectedWatchlistId] = useState<number | null>(null);
-  const { watchlist, isMovieInWatchlist, addMovie, removeMovie, isAddingMovie, isRemovingMovie } = 
-    useWatchlistDetails(selectedWatchlistId);
   
   // Перевіряємо, чи фільм додано хоча б до одного списку
   const isInAnyWatchlist = watchlists.some(list => {
@@ -91,8 +89,9 @@ export function AddToWatchlistButton({
   
   // Якщо є лише один список, використовуємо просту кнопку
   if (watchlists.length === 1 && !isLoadingWatchlists) {
-    const isInWatchlist = useWatchlistDetails(watchlists[0].id).isMovieInWatchlist?.(movie.id);
-    const isPending = isAddingMovie || isRemovingMovie;
+    const watchlistDetails = useWatchlistDetails(watchlists[0].id);
+    const isInWatchlist = watchlistDetails.isMovieInWatchlist?.(movie.id);
+    const isPending = watchlistDetails.isAddingMovie || watchlistDetails.isRemovingMovie;
     
     if (showTooltip) {
       return (
@@ -173,11 +172,8 @@ export function AddToWatchlistButton({
                 isInAnyWatchlist ? "bg-yellow-600 hover:bg-yellow-700" : "",
                 className
               )}
-              disabled={isAddingMovie || isRemovingMovie}
             >
-              {isAddingMovie || isRemovingMovie ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : isInAnyWatchlist ? (
+              {isInAnyWatchlist ? (
                 <BookmarkCheck className="h-4 w-4" />
               ) : (
                 <Bookmark className="h-4 w-4" />

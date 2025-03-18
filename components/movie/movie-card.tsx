@@ -19,6 +19,7 @@ import { useMovieTrailer } from '@/hooks/use-movie-trailer';
 import { useMovieTranslations } from '@/hooks/use-movie-translations';
 import { LanguageSelector } from './language-selector';
 import { Globe } from 'lucide-react';
+import { WatchlistSelector } from '@/components/watchlist/watchlist-selector';
 
 // Функція для безпечного перетворення значення на число
 function safeNumberConversion(value: any): number {
@@ -197,24 +198,13 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
             {/* Кнопка списку перегляду */}
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={`absolute top-2 right-2 p-1.5 rounded-full ${isInWatchlist(movie.id)
-                      ? 'bg-yellow-500 hover:bg-yellow-600 text-white'
-                      : 'bg-white/80 hover:bg-white text-gray-600 hover:text-gray-800'
-                    }`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleAddToWatchlist();
-                  }}
-                >
-                  {isInWatchlist(movie.id) ? (
-                    <BookmarkCheck className="h-5 w-5" />
-                  ) : (
-                    <Bookmark className="h-5 w-5" />
-                  )}
-                </Button>
+              <WatchlistSelector 
+                movie={movie} 
+                variant="ghost" 
+                size="icon" 
+                className="absolute top-2 right-2" 
+                iconOnly={true} 
+              />
               </TooltipTrigger>
               <TooltipContent>
                 {isInWatchlist(movie.id) ? "Прибрати зі списку" : "Додати до списку"}
@@ -296,24 +286,13 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
           {/* Кнопка списку перегляду */}
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className={`absolute top-2 right-2 p-1.5 rounded-full ${isInWatchlist(movie.id)
-                    ? 'bg-yellow-500 hover:bg-yellow-600 text-white'
-                    : 'bg-white/80 hover:bg-white text-gray-600 hover:text-gray-800'
-                  }`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleAddToWatchlist();
-                }}
-              >
-                {isInWatchlist(movie.id) ? (
-                  <BookmarkCheck className="h-6 w-6" />
-                ) : (
-                  <Bookmark className="h-6 w-6" />
-                )}
-              </Button>
+            <WatchlistSelector 
+              movie={movie} 
+              variant="ghost" 
+              size="icon" 
+              className="absolute top-2 right-2" 
+              iconOnly={true} 
+            />
             </TooltipTrigger>
             <TooltipContent>
               {isInWatchlist(movie.id) ? "Прибрати зі списку" : "Додати до списку"}
