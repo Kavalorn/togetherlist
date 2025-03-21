@@ -136,7 +136,10 @@ const handleSaveNotes = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setIsNotesDialogOpen(true)}>
+              <DropdownMenuItem onClick={(e) => {
+                e.stopPropagation();
+                setIsNotesDialogOpen(true)
+              }}>
                 <NotebookPen className="h-4 w-4 mr-2" />
                 {movie.notes ? "Редагувати нотатки" : "Додати нотатки"}
               </DropdownMenuItem>
