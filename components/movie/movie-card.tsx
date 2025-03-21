@@ -42,6 +42,7 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
   const [imageError, setImageError] = useState(false);
   const [isRemovingLocal, setIsRemovingLocal] = useState(false);
   const [isAddingLocal, setIsAddingLocal] = useState(false);
+  const [isMarkingWatched, setIsMarkingWatched] = useState(false);
   const [trailerOpen, setTrailerOpen] = useState(false);
   const { hasTrailer, isLoading: isCheckingTrailer } = useMovieTrailer(movie.id);
 
@@ -121,18 +122,12 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
 
   // Обробник для кнопки зміни статусу перегляду (око)
   const handleToggleWatched = (e: React.MouseEvent) => {
-    e.stopPropagation();
-
-    if (movieWatched) {
-      handleRemoveFromWatched();
-    } else {
-      handleAddToWatched();
-    }
-  };
-
-  const handleToggleWatchlist = (e: React.MouseEvent) => {
     e.stopPropagation(); // Запобігаємо відкриттю деталей фільму при натисканні на кнопку
-  
+    
+    if (isMarkingWatched) return; // Запобігаємо повторним кліками під час виконання
+    
+    setIsMarkingWatched(true);
+    
     // Переконуємося, що передаємо всі необхідні дані, включаючи vote_count
     const movieData = {
       id: movie.id,
@@ -143,9 +138,40 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
       vote_average: voteAverage,
       vote_count: voteCount // Використовуємо безпечне значення
     };
-  
+    
+    try {
+      if (movieWatched) {
+        // Видаляємо зі списку переглянутих
+        removeFromWatched(movie.id);
+        toast.success(`"${movie.title}" прибрано з переглянутих фільмів`);
+      } else {
+        // Додаємо до переглянутих
+        markAsWatched({ movie: movieData });
+        toast.success(`"${movie.title}" позначено як переглянутий`);
+      }
+    } catch (error) {
+      toast.error(`Помилка: ${error instanceof Error ? error.message : 'Виникла помилка'}`);
+    } finally {
+      setIsMarkingWatched(false);
+    }
+  };
+
+  const handleToggleWatchlist = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    // Переконуємося, що передаємо всі необхідні дані, включаючи vote_count
+    const movieData = {
+      id: movie.id,
+      title: movie.title,
+      poster_path: movie.poster_path,
+      release_date: movie.release_date,
+      overview: movie.overview,
+      vote_average: voteAverage,
+      vote_count: voteCount // Використовуємо безпечне значення
+    };
+    
     toggleWatchlist(movieData as any);
-  
+    
     // Відображаємо повідомлення про успішне додавання/видалення
     if (isInWatchlist(movie.id)) {
       toast.success(`"${movie.title}" видалено зі списку перегляду`);
@@ -185,10 +211,10 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
                       ? 'bg-blue-500 hover:bg-blue-600 text-white'
                       : 'bg-white/80 hover:bg-white text-gray-600 hover:text-gray-800'
                     }`}
-                  onClick={handleToggleWatchlist}
-                  disabled={isRemovingLocal || isAddingLocal}
+                  onClick={handleToggleWatched}
+                  disabled={isMarkingWatched}
                 >
-                  {isRemovingLocal || isAddingLocal ? (
+                  {isMarkingWatched ? (
                     <Loader2 className="h-5 w-5 animate-spin" />
                   ) : movieWatched ? (
                     <Eye className="h-5 w-5" />
@@ -212,7 +238,7 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
                 variant="ghost" 
                 size="icon" 
                 className="absolute top-2 right-2" 
-                iconOnly={true} 
+                iconOnly={true}
               />
               </TooltipTrigger>
               <TooltipContent>
@@ -320,10 +346,10 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
                     ? 'bg-blue-500 hover:bg-blue-600 text-white'
                     : 'bg-white/80 hover:bg-white text-gray-600 hover:text-gray-800'
                   }`}
-                onClick={handleToggleWatchlist}
-                disabled={isRemovingLocal || isAddingLocal}
+                onClick={handleToggleWatched}
+                disabled={isMarkingWatched}
               >
-                {isRemovingLocal || isAddingLocal ? (
+                {isMarkingWatched ? (
                   <Loader2 className="h-6 w-6 animate-spin" />
                 ) : movieWatched ? (
                   <Eye className="h-6 w-6" />
