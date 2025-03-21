@@ -374,6 +374,7 @@ getPopularPeople: async (page = 1) => {
         'primary_release_date.gte': `${minYear}-01-01`,
         'primary_release_date.lte': `${maxYear}-12-31`,
         include_adult: includeAdult.toString(),
+        'with_runtime.gte': '30', // Фільтр для фільмів тривалістю від 30 хвилин
         ...showLanguage
       };
 
@@ -396,10 +397,13 @@ getPopularPeople: async (page = 1) => {
         }
       );
       
+      // Фільтруємо фільми, щоб прибрати ті, у яких немає постера
+      const moviesWithPosters = response.results.filter(movie => !!movie.poster_path);
+      
       // Беремо випадковий фільм з результатів
-      if (response.results && response.results.length > 0) {
-        const randomIndex = Math.floor(Math.random() * response.results.length);
-        const randomMovie = response.results[randomIndex];
+      if (moviesWithPosters.length > 0) {
+        const randomIndex = Math.floor(Math.random() * moviesWithPosters.length);
+        const randomMovie = moviesWithPosters[randomIndex];
         
         // Логуємо для відлагодження
         console.log("Обрано випадковий фільм:", {
@@ -413,21 +417,25 @@ getPopularPeople: async (page = 1) => {
       }
       
       // Якщо нічого не знайдено, робимо більш простий запит
-      // Зменшуємо обмеження на фільтри
+      // Зменшуємо обмеження на фільтри, але зберігаємо вимоги до тривалості та постера
       const fallbackResponse = await fetchFromTMDB<{ results: Movie[] }>(
         '/discover/movie',
         { 
           sort_by: 'popularity.desc',
           'vote_average.gte': '0',
+          'with_runtime.gte': '30', // Зберігаємо фільтр за тривалістю
           include_adult: includeAdult.toString(),
           page: Math.floor(Math.random() * 20 + 1).toString(),
           ...showLanguage
         }
       );
       
-      if (fallbackResponse.results && fallbackResponse.results.length > 0) {
-        const randomIndex = Math.floor(Math.random() * fallbackResponse.results.length);
-        const fallbackMovie = fallbackResponse.results[randomIndex];
+      // Фільтруємо фільми за наявністю постера
+      const fallbackMoviesWithPosters = fallbackResponse.results.filter(movie => !!movie.poster_path);
+      
+      if (fallbackMoviesWithPosters.length > 0) {
+        const randomIndex = Math.floor(Math.random() * fallbackMoviesWithPosters.length);
+        const fallbackMovie = fallbackMoviesWithPosters[randomIndex];
         
         // Логуємо для відлагодження
         console.log("Запасний варіант випадкового фільму:", {
@@ -445,9 +453,12 @@ getPopularPeople: async (page = 1) => {
         { page: '1', ...showLanguage }
       );
       
-      if (emergencyFallback.results && emergencyFallback.results.length > 0) {
-        const randomIndex = Math.floor(Math.random() * emergencyFallback.results.length);
-        const emergencyMovie = emergencyFallback.results[randomIndex];
+      // Фільтруємо фільми за наявністю постера
+      const emergencyMoviesWithPosters = emergencyFallback.results.filter(movie => !!movie.poster_path);
+      
+      if (emergencyMoviesWithPosters.length > 0) {
+        const randomIndex = Math.floor(Math.random() * emergencyMoviesWithPosters.length);
+        const emergencyMovie = emergencyMoviesWithPosters[randomIndex];
         
         // Логуємо для відлагодження
         console.log("Екстрений варіант фільму:", {
@@ -469,9 +480,12 @@ getPopularPeople: async (page = 1) => {
         { page: '1', ...showLanguage }
       );
       
-      if (emergencyFallback.results && emergencyFallback.results.length > 0) {
-        const randomIndex = Math.floor(Math.random() * emergencyFallback.results.length);
-        return emergencyFallback.results[randomIndex];
+      // Фільтруємо фільми за наявністю постера
+      const emergencyMoviesWithPosters = emergencyFallback.results.filter(movie => !!movie.poster_path);
+      
+      if (emergencyMoviesWithPosters.length > 0) {
+        const randomIndex = Math.floor(Math.random() * emergencyMoviesWithPosters.length);
+        return emergencyMoviesWithPosters[randomIndex];
       }
       
       throw new Error('Failed to fetch any movies');
