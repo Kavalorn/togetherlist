@@ -223,7 +223,7 @@ const handleSaveNotes = () => {
           )}
         </CardContent>
         
-        <CardFooter className="p-3 pt-0 grid grid-cols-2 gap-2">
+        <CardFooter className="p-3 pt-0 gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -232,28 +232,6 @@ const handleSaveNotes = () => {
           >
             <Info className="mr-2 h-4 w-4" />
             Деталі
-          </Button>
-          
-          <Button
-            variant={movieWatched ? "default" : "secondary"}
-            size="sm"
-            className={`w-full ${movieWatched ? "bg-blue-500 hover:bg-blue-600" : ""}`}
-            onClick={handleToggleWatched}
-            disabled={isMarkingWatched}
-          >
-            {isMarkingWatched ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : movieWatched ? (
-              <>
-                <EyeOff className="mr-2 h-4 w-4" />
-                Непереглянуто
-              </>
-            ) : (
-              <>
-                <Eye className="mr-2 h-4 w-4" />
-                Переглянуто
-              </>
-            )}
           </Button>
         </CardFooter>
       </Card>

@@ -27,6 +27,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import {
   Loader2, 
   PlusCircle, 
@@ -37,7 +38,8 @@ import {
   Trash2, 
   Inbox,
   List,
-  Eye
+  Eye,
+  Menu
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -79,16 +81,9 @@ function WatchlistsContent() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [selectedWatchlist, setSelectedWatchlist] = useState<Watchlist | null>(null);
   const [activeWatchlistId, setActiveWatchlistId] = useState<number | null>(null);
-  
-  // Стани для форм
-  const [newWatchlistName, setNewWatchlistName] = useState('');
-  const [newWatchlistDescription, setNewWatchlistDescription] = useState('');
-  const [newWatchlistColor, setNewWatchlistColor] = useState('#3b82f6');
-  const [editWatchlistName, setEditWatchlistName] = useState('');
-  const [editWatchlistDescription, setEditWatchlistDescription] = useState('');
-  const [editWatchlistColor, setEditWatchlistColor] = useState('');
   
   // Кольори для списків
   const colorOptions = [
@@ -123,22 +118,20 @@ function WatchlistsContent() {
   }, [isLoading, watchlists, activeWatchlistId]);
   
   // Обробник створення нового списку
-  const handleCreateWatchlist = () => {
-    if (!newWatchlistName.trim()) {
+  const handleCreateWatchlist = (name: string, description: string, color: string) => {
+    if (!name.trim()) {
       toast.error('Введіть назву списку');
       return;
     }
     
     createWatchlist({
-      name: newWatchlistName.trim(),
-      description: newWatchlistDescription.trim(),
-      color: newWatchlistColor,
+      name: name.trim(),
+      description: description.trim(),
+      color: color,
     }, {
       onSuccess: (data) => {
-        toast.success(`Список "${newWatchlistName}" створено`);
+        toast.success(`Список "${name}" створено`);
         setIsCreateDialogOpen(false);
-        setNewWatchlistName('');
-        setNewWatchlistDescription('');
         setActiveWatchlistId(data.id);
       },
       onError: (error: Error) => {
@@ -148,10 +141,10 @@ function WatchlistsContent() {
   };
   
   // Обробник оновлення списку
-  const handleUpdateWatchlist = () => {
+  const handleUpdateWatchlist = (name: string, description: string, color: string) => {
     if (!selectedWatchlist) return;
     
-    if (!editWatchlistName.trim()) {
+    if (!name.trim()) {
       toast.error('Введіть назву списку');
       return;
     }
@@ -159,13 +152,13 @@ function WatchlistsContent() {
     updateWatchlist({
       id: selectedWatchlist.id,
       data: {
-        name: editWatchlistName.trim(),
-        description: editWatchlistDescription.trim(),
-        color: editWatchlistColor,
+        name: name.trim(),
+        description: description.trim(),
+        color: color,
       }
     }, {
       onSuccess: () => {
-        toast.success(`Список "${editWatchlistName}" оновлено`);
+        toast.success(`Список "${name}" оновлено`);
         setIsEditDialogOpen(false);
         setSelectedWatchlist(null);
       },
@@ -215,9 +208,6 @@ function WatchlistsContent() {
   // Відкриття діалогу редагування
   const handleOpenEditDialog = (watchlist: Watchlist) => {
     setSelectedWatchlist(watchlist);
-    setEditWatchlistName(watchlist.name);
-    setEditWatchlistDescription(watchlist.description || '');
-    setEditWatchlistColor(watchlist.color);
     setIsEditDialogOpen(true);
   };
   
@@ -225,6 +215,12 @@ function WatchlistsContent() {
   const handleOpenDeleteDialog = (watchlist: Watchlist) => {
     setSelectedWatchlist(watchlist);
     setIsDeleteDialogOpen(true);
+  };
+  
+  // Вибір списку і закриття мобільного меню
+  const handleSelectWatchlist = (watchlistId: number) => {
+    setActiveWatchlistId(watchlistId);
+    setIsMobileMenuOpen(false);
   };
   
   // Функція для отримання іконки списку
@@ -256,66 +252,128 @@ function WatchlistsContent() {
     );
   }
   
-  // Компонент для відображення вмісту списку
-  const WatchlistContent = ({ watchlistId }: { watchlistId: number }) => {
-    const { watchlist, movies, isLoading, isError } = useWatchlistDetails(watchlistId);
-    
-    if (isLoading) {
-      return (
-        <div className="flex justify-center items-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+  // Отримуємо назву активного списку
+  const activeWatchlistName = watchlists.find(w => w.id === activeWatchlistId)?.name || '';
+  
+  // Компонент для відображення списків у бічній панелі
+  const WatchlistSidebar = ({ className }: { className?: string }) => (
+    <div className={cn("bg-card rounded-lg border shadow-sm p-4", className)}>
+      <h2 className="text-lg font-semibold mb-4">Мої списки</h2>
+      <ScrollArea className="h-[calc(100vh-220px)] md:h-[calc(100vh-250px)]">
+        <div className="space-y-2 pr-4">
+          {watchlists.map(list => (
+            <button
+              key={list.id}
+              className={cn(
+                "w-full flex items-center gap-3 p-3 rounded-md transition-colors group",
+                activeWatchlistId === list.id
+                  ? "bg-primary text-primary-foreground"
+                  : "hover:bg-muted"
+              )}
+              onClick={() => handleSelectWatchlist(list.id)}
+            >
+              <div 
+                className="flex-shrink-0 w-8 h-8 rounded-md flex items-center justify-center"
+                style={{ backgroundColor: list.color || '#3b82f6' }}
+              >
+                {getWatchlistIcon(list)}
+              </div>
+              <div className="flex-1 text-left">
+                <p className="font-medium truncate overflow-hidden">{list.name}</p>
+                <WatchlistMovieCount watchlistId={list.id} />
+              </div>
+              
+              {!list.isDefault && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 opacity-0 group-hover:opacity-100 focus:opacity-100"
+                      onClick={e => e.stopPropagation()}
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenEditDialog(list);
+                      }}
+                    >
+                      <Pencil className="h-4 w-4 mr-2" />
+                      Редагувати
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenDeleteDialog(list);
+                      }}
+                      className="text-red-600 focus:text-red-600"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Видалити
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </button>
+          ))}
         </div>
-      );
-    }
-    
-    if (isError || !watchlist) {
-      return (
-        <div className="flex flex-col items-center justify-center py-12">
-          <p className="text-muted-foreground">Помилка завантаження списку</p>
-          <Button onClick={() => refetch()} className="mt-4">
-            Спробувати знову
+      </ScrollArea>
+      <Button
+        variant="outline"
+        className="w-full mt-4"
+        onClick={() => setIsCreateDialogOpen(true)}
+      >
+        <PlusCircle className="mr-2 h-4 w-4" />
+        Новий список
+      </Button>
+    </div>
+  );
+  
+  // Компонент для відображення мобільної панелі вибору списків
+  const MobileWatchlistSelector = () => (
+    <div className="lg:hidden flex items-center space-x-2 mb-4">
+      <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+        <SheetTrigger asChild>
+          <Button variant="outline" size="icon" className="h-10 w-10">
+            <Menu className="h-5 w-5" />
           </Button>
-        </div>
-      );
-    }
-    
-    if (movies.length === 0) {
-      return (
-        <div className="flex flex-col items-center justify-center py-12 space-y-4">
-          <Film className="h-16 w-16 text-muted-foreground" />
-          <h3 className="text-xl font-semibold">Список порожній</h3>
-          <p className="text-muted-foreground text-center max-w-md">
-            У цьому списку ще немає фільмів. Додайте фільми, щоб вони з'явились тут.
-          </p>
-          <Button onClick={() => router.push('/')} className="mt-4">
-            Шукати фільми
-          </Button>
-        </div>
-      );
-    }
-    
-    return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-        {movies.map(movie => (
-          <MovieCard
-            key={movie.id}
-            movie={{
-              id: movie.movie_id,
-              title: movie.title,
-              poster_path: movie.poster_path || '',
-              release_date: movie.release_date || '',
-              overview: movie.overview || '',
-              vote_average: movie.vote_average || 0,
-              vote_count: movie.vote_count || 0
-            }}
-          />
-        ))}
+        </SheetTrigger>
+        <SheetContent side="left" className="w-[85%] sm:w-[350px] p-0">
+          <div className="py-4 px-6">
+            <h2 className="text-lg font-semibold mb-2">Мої списки</h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              {watchlists.length} {watchlists.length === 1 ? 'список' : watchlists.length < 5 ? 'списки' : 'списків'}
+            </p>
+          </div>
+          <Separator />
+          <div className="p-4">
+            <WatchlistSidebar className="border-0 shadow-none p-2" />
+          </div>
+        </SheetContent>
+      </Sheet>
+      
+      <div className="flex-1 overflow-hidden">
+        <h2 className="text-lg font-semibold truncate">{activeWatchlistName || 'Виберіть список'}</h2>
       </div>
-    );
-  };
+      
+      <Button
+        size="icon"
+        variant="ghost"
+        onClick={() => setIsCreateDialogOpen(true)}
+        className="flex-shrink-0"
+      >
+        <PlusCircle className="h-5 w-5" />
+      </Button>
+    </div>
+  );
   
   return (
-    <div className="space-y-6 sm:space-y-8">
+    <div className="space-y-6 px-4 py-6 sm:px-6 md:space-y-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold">Списки перегляду</h1>
@@ -336,6 +394,7 @@ function WatchlistsContent() {
               onClick={handleMigrateWatchlist}
               disabled={isMigrating}
               className="w-full sm:w-auto"
+              size="sm"
             >
               {isMigrating ? (
                 <>
@@ -345,7 +404,7 @@ function WatchlistsContent() {
               ) : (
                 <>
                   <Eye className="mr-2 h-4 w-4" />
-                  Мігрувати старий список
+                  Мігрувати список
                 </>
               )}
             </Button>
@@ -355,6 +414,7 @@ function WatchlistsContent() {
             variant="default"
             onClick={() => setIsCreateDialogOpen(true)}
             className="w-full sm:w-auto"
+            size="sm"
           >
             <PlusCircle className="mr-2 h-4 w-4" />
             Створити список
@@ -369,101 +429,32 @@ function WatchlistsContent() {
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : watchlists.length > 0 ? (
-        <div className="flex flex-col md:flex-row gap-6">
-          {/* Бокова панель зі списками */}
-          <div className="md:w-1/4 lg:w-1/5">
-            <div className="bg-card rounded-lg border shadow-sm p-4">
-              <h2 className="text-lg font-semibold mb-4">Мої списки</h2>
-              <ScrollArea className="h-[calc(100vh-220px)]">
-                <div className="space-y-2 pr-4">
-                  {watchlists.map(list => (
-                    <button
-                      key={list.id}
-                      className={cn(
-                        "w-full flex items-center gap-3 p-3 rounded-md transition-colors group",
-                        activeWatchlistId === list.id
-                          ? "bg-primary text-primary-foreground"
-                          : "hover:bg-muted"
-                      )}
-                      onClick={() => setActiveWatchlistId(list.id)}
-                    >
-                      <div 
-                        className="flex-shrink-0 w-8 h-8 rounded-md flex items-center justify-center"
-                        style={{ backgroundColor: list.color || '#3b82f6' }}
-                      >
-                        {getWatchlistIcon(list)}
-                      </div>
-                      <div className="flex-1 text-left overflow-hidden">
-                        <p className="font-medium truncate">{list.name}</p>
-                        <WatchlistMovieCount watchlistId={list.id} />
-                      </div>
-                      
-                      {!list.isDefault && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 opacity-0 group-hover:opacity-100 focus:opacity-100"
-                              onClick={e => e.stopPropagation()}
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleOpenEditDialog(list);
-                              }}
-                            >
-                              <Pencil className="h-4 w-4 mr-2" />
-                              Редагувати
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleOpenDeleteDialog(list);
-                              }}
-                              className="text-red-600 focus:text-red-600"
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Видалити
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
-                    </button>
-                  ))}
+        <>
+          {/* Мобільна панель вибору списків */}
+          <MobileWatchlistSelector />
+          
+          <div className="flex flex-col lg:flex-row gap-6">
+            {/* Бокова панель зі списками (прихована на мобільних) */}
+            <div className="hidden lg:block lg:w-1/4 xl:w-1/5">
+              <WatchlistSidebar />
+            </div>
+            
+            {/* Вміст активного списку */}
+            <div className="lg:w-3/4 xl:w-4/5">
+              {activeWatchlistId ? (
+                <ActiveWatchlistContent watchlistId={activeWatchlistId} />
+              ) : (
+                <div className="flex flex-col items-center justify-center h-64 border rounded-lg">
+                  <p className="text-muted-foreground">Виберіть список перегляду</p>
                 </div>
-              </ScrollArea>
-              <Button
-                variant="outline"
-                className="w-full mt-4"
-                onClick={() => setIsCreateDialogOpen(true)}
-              >
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Новий список
-              </Button>
+              )}
             </div>
           </div>
-          
-          {/* Вміст активного списку */}
-          <div className="md:w-3/4 lg:w-4/5">
-            {activeWatchlistId ? (
-              <ActiveWatchlistContent watchlistId={activeWatchlistId} />
-            ) : (
-              <div className="flex flex-col items-center justify-center h-64 border rounded-lg">
-                <p className="text-muted-foreground">Виберіть список перегляду з бічної панелі</p>
-              </div>
-            )}
-          </div>
-        </div>
+        </>
       ) : (
-        <div className="flex flex-col items-center justify-center py-16 space-y-6">
+        <div className="flex flex-col items-center justify-center py-12 sm:py-16 space-y-6">
           <BookmarkIcon className="h-16 w-16 text-muted-foreground" />
-          <div className="text-center max-w-md space-y-2">
+          <div className="text-center max-w-md space-y-2 px-4">
             <h2 className="text-xl font-semibold">У вас ще немає списків перегляду</h2>
             <p className="text-muted-foreground">
               Створіть свій перший список перегляду для організації фільмів
@@ -480,147 +471,30 @@ function WatchlistsContent() {
       )}
       
       {/* Діалог для створення нового списку */}
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Створити новий список</DialogTitle>
-            <DialogDescription>
-              Створіть новий список перегляду для організації фільмів.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={(e) => { e.preventDefault(); handleCreateWatchlist(); }}>
-            <div className="space-y-4 py-2">
-              <div className="space-y-2">
-                <Label htmlFor="name">Назва списку</Label>
-                <Input
-                  id="name"
-                  value={newWatchlistName}
-                  onChange={(e) => setNewWatchlistName(e.target.value)}
-                  placeholder="Наприклад: Бойовики"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">Опис (необов'язково)</Label>
-                <Textarea
-                  id="description"
-                  value={newWatchlistDescription}
-                  onChange={(e) => setNewWatchlistDescription(e.target.value)}
-                  placeholder="Короткий опис списку"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Колір</Label>
-                <div className="flex flex-wrap gap-2">
-                  {colorOptions.map((color) => (
-                    <button
-                      key={color.value}
-                      type="button"
-                      className={cn(
-                        "w-8 h-8 rounded-full border border-gray-300",
-                        newWatchlistColor === color.value && "ring-2 ring-black dark:ring-white ring-offset-2"
-                      )}
-                      style={{ backgroundColor: color.value }}
-                      onClick={() => setNewWatchlistColor(color.value)}
-                      title={color.name}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-            <DialogFooter className="mt-6">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsCreateDialogOpen(false)}
-              >
-                Скасувати
-              </Button>
-              <Button 
-                type="submit"
-                disabled={isCreating || !newWatchlistName.trim()}
-              >
-                {isCreating ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Створення...
-                  </>
-                ) : (
-                  "Створити список"
-                )}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      {isCreateDialogOpen && (
+        <CreateWatchlistDialog 
+          isOpen={isCreateDialogOpen}
+          onClose={() => setIsCreateDialogOpen(false)}
+          onSubmit={handleCreateWatchlist}
+          isCreating={isCreating}
+          colorOptions={colorOptions}
+        />
+      )}
       
       {/* Діалог для редагування списку */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Редагувати список</DialogTitle>
-            <DialogDescription>
-              Змініть деталі списку перегляду.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={(e) => { e.preventDefault(); handleUpdateWatchlist(); }}>
-            <div className="space-y-4 py-2">
-              <div className="space-y-2">
-                <Label htmlFor="edit-name">Назва списку</Label>
-                <Input
-                  id="edit-name"
-                  value={editWatchlistName}
-                  onChange={(e) => setEditWatchlistName(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-description">Опис (необов'язково)</Label>
-                <Textarea
-                  id="edit-description"
-                  value={editWatchlistDescription}
-                  onChange={(e) => setEditWatchlistDescription(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Колір</Label>
-                <div className="flex flex-wrap gap-2">
-                  {colorOptions.map((color) => (
-                    <button
-                      key={color.value}
-                      type="button"
-                      className={cn(
-                        "w-8 h-8 rounded-full border border-gray-300",
-                        editWatchlistColor === color.value && "ring-2 ring-black dark:ring-white ring-offset-2"
-                      )}
-                      style={{ backgroundColor: color.value }}
-                      onClick={() => setEditWatchlistColor(color.value)}
-                      title={color.name}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-            <DialogFooter className="mt-6">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsEditDialogOpen(false)}
-              >
-                Скасувати
-              </Button>
-              <Button 
-                type="submit"
-                disabled={!editWatchlistName.trim()}
-              >
-                Зберегти зміни
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      {isEditDialogOpen && selectedWatchlist && (
+        <EditWatchlistDialog 
+          isOpen={isEditDialogOpen}
+          onClose={() => setIsEditDialogOpen(false)}
+          onSubmit={handleUpdateWatchlist}
+          watchlist={selectedWatchlist}
+          colorOptions={colorOptions}
+        />
+      )}
       
       {/* Діалог для видалення списку */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[425px] max-w-[90vw]">
           <DialogHeader>
             <DialogTitle>Видалити список</DialogTitle>
             <DialogDescription>
@@ -633,10 +507,11 @@ function WatchlistsContent() {
               Ця дія не може бути скасована.
             </p>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-col space-y-2 sm:space-y-0 sm:flex-row">
             <Button
               variant="outline"
               onClick={() => setIsDeleteDialogOpen(false)}
+              className="w-full sm:w-auto"
             >
               Скасувати
             </Button>
@@ -644,6 +519,7 @@ function WatchlistsContent() {
               variant="destructive"
               onClick={handleDeleteWatchlist}
               disabled={isDeleting}
+              className="w-full sm:w-auto"
             >
               {isDeleting ? (
                 <>
@@ -680,6 +556,199 @@ function WatchlistMovieCount({ watchlistId }: { watchlistId: number }) {
   );
 }
 
+// Компонент для створення нового списку перегляду
+function CreateWatchlistDialog({
+  isOpen,
+  onClose,
+  onSubmit,
+  isCreating,
+  colorOptions
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (name: string, description: string, color: string) => void;
+  isCreating: boolean;
+  colorOptions: Array<{ value: string; name: string }>;
+}) {
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [color, setColor] = useState('#3b82f6');
+  
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(name, description, color);
+  };
+  
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[425px] max-w-[90vw]">
+        <DialogHeader>
+          <DialogTitle>Створити новий список</DialogTitle>
+          <DialogDescription>
+            Створіть новий список перегляду для організації фільмів.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="name">Назва списку</Label>
+              <Input
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Наприклад: Бойовики"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="description">Опис (необов'язково)</Label>
+              <Textarea
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Короткий опис списку"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Колір</Label>
+              <div className="flex flex-wrap gap-3">
+                {colorOptions.map((colorOption) => (
+                  <button
+                    key={colorOption.value}
+                    type="button"
+                    className={cn(
+                      "w-10 h-10 rounded-full border border-gray-300 touch-manipulation",
+                      color === colorOption.value && "ring-2 ring-black dark:ring-white ring-offset-2"
+                    )}
+                    style={{ backgroundColor: colorOption.value }}
+                    onClick={() => setColor(colorOption.value)}
+                    title={colorOption.name}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="mt-6 flex-col space-y-2 sm:space-y-0 sm:flex-row">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              className="w-full sm:w-auto"
+            >
+              Скасувати
+            </Button>
+            <Button 
+              type="submit"
+              disabled={isCreating || !name.trim()}
+              className="w-full sm:w-auto"
+            >
+              {isCreating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Створення...
+                </>
+              ) : (
+                "Створити список"
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// Компонент для редагування списку перегляду
+function EditWatchlistDialog({
+  isOpen,
+  onClose,
+  onSubmit,
+  watchlist,
+  colorOptions
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (name: string, description: string, color: string) => void;
+  watchlist: Watchlist;
+  colorOptions: Array<{ value: string; name: string }>;
+}) {
+  const [name, setName] = useState(watchlist.name);
+  const [description, setDescription] = useState(watchlist.description || '');
+  const [color, setColor] = useState(watchlist.color);
+  
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(name, description, color);
+  };
+  
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[425px] max-w-[90vw]">
+        <DialogHeader>
+          <DialogTitle>Редагувати список</DialogTitle>
+          <DialogDescription>
+            Змініть деталі списку перегляду.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">Назва списку</Label>
+              <Input
+                id="edit-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-description">Опис (необов'язково)</Label>
+              <Textarea
+                id="edit-description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Колір</Label>
+              <div className="flex flex-wrap gap-3">
+                {colorOptions.map((colorOption) => (
+                  <button
+                    key={colorOption.value}
+                    type="button"
+                    className={cn(
+                      "w-10 h-10 rounded-full border border-gray-300 touch-manipulation",
+                      color === colorOption.value && "ring-2 ring-black dark:ring-white ring-offset-2"
+                    )}
+                    style={{ backgroundColor: colorOption.value }}
+                    onClick={() => setColor(colorOption.value)}
+                    title={colorOption.name}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="mt-6 flex-col space-y-2 sm:space-y-0 sm:flex-row">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              className="w-full sm:w-auto"
+            >
+              Скасувати
+            </Button>
+            <Button 
+              type="submit"
+              disabled={!name.trim()}
+              className="w-full sm:w-auto"
+            >
+              Зберегти зміни
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // Компонент для відображення вмісту активного списку
 function ActiveWatchlistContent({ watchlistId }: { watchlistId: number }) {
   const { watchlist, movies, isLoading, isError } = useWatchlistDetails(watchlistId);
@@ -706,8 +775,8 @@ function ActiveWatchlistContent({ watchlistId }: { watchlistId: number }) {
   
   return (
     <div>
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-4 md:mb-6">
+        <div className="hidden lg:flex items-center gap-3">
           <div 
             className="flex-shrink-0 w-10 h-10 rounded-md flex items-center justify-center"
             style={{ backgroundColor: watchlist.color || '#3b82f6' }}
@@ -722,8 +791,8 @@ function ActiveWatchlistContent({ watchlistId }: { watchlistId: number }) {
           </div>
         </div>
         
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          <p className="text-sm text-muted-foreground mr-2">
+        <div className="flex items-center gap-2 w-full lg:w-auto justify-between lg:justify-end">
+          <p className="text-sm text-muted-foreground">
             {movies.length} {movies.length === 1 ? 'фільм' : movies.length < 5 ? 'фільми' : 'фільмів'}
           </p>
           
@@ -739,27 +808,27 @@ function ActiveWatchlistContent({ watchlistId }: { watchlistId: number }) {
       </div>
       
       {movies.length === 0 ? (
-      <div className="flex flex-col items-center justify-center py-12 space-y-4 border rounded-lg">
-        <Film className="h-16 w-16 text-muted-foreground" />
-        <h3 className="text-xl font-semibold">Список порожній</h3>
-        <p className="text-muted-foreground text-center max-w-md">
-          У цьому списку ще немає фільмів. Додайте фільми, щоб вони з'явились тут.
-        </p>
-        <Button onClick={() => router.push('/')} className="mt-4">
-          Шукати фільми
-        </Button>
-      </div>
-    ) : (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-        {movies.map(movie => (
-          <WatchlistMovieCard
-            key={movie.id}
-            movie={movie}
-            watchlistId={watchlistId}
-          />
-        ))}
-      </div>
-    )}
+        <div className="flex flex-col items-center justify-center py-8 sm:py-12 space-y-4 border rounded-lg">
+          <Film className="h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground" />
+          <h3 className="text-lg sm:text-xl font-semibold">Список порожній</h3>
+          <p className="text-muted-foreground text-center max-w-md px-4">
+            У цьому списку ще немає фільмів. Додайте фільми, щоб вони з'явились тут.
+          </p>
+          <Button onClick={() => router.push('/')} className="mt-2">
+            Шукати фільми
+          </Button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+          {movies.map(movie => (
+            <WatchlistMovieCard
+              key={movie.id}
+              movie={movie}
+              watchlistId={watchlistId}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
