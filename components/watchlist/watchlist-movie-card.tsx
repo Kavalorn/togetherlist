@@ -143,7 +143,10 @@ const handleSaveNotes = () => {
                 <NotebookPen className="h-4 w-4 mr-2" />
                 {movie.notes ? "Редагувати нотатки" : "Додати нотатки"}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleToggleWatched}>
+              <DropdownMenuItem onClick={(e) => {
+                e.stopPropagation();
+                handleToggleWatched();
+              }}>
                 {movieWatched ? (
                   <>
                     <EyeOff className="h-4 w-4 mr-2" />
@@ -158,7 +161,10 @@ const handleSaveNotes = () => {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem 
-                onClick={handleRemoveFromWatchlist}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRemoveFromWatchlist();
+                }}
                 className="text-red-500 focus:text-red-500"
               >
                 <Trash2 className="h-4 w-4 mr-2" />

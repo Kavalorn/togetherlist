@@ -243,7 +243,7 @@ export async function PATCH(
 // DELETE - Видалення списку перегляду
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { watchlistId: string } }
 ) {
   try {
     const supabase = createSupabaseServerClient();
@@ -267,7 +267,7 @@ export async function DELETE(
       );
     }
 
-    const { id } = params;
+    const { watchlistId: id } = params;
     
     const watchlistId = parseInt(id, 10);
     

@@ -194,7 +194,7 @@ function WatchlistsContent() {
         }
       },
       onError: (error: Error) => {
-        toast.error(`Помилка: ${error.message}`);
+        toast.error(`Помилка: ${error.message} (${JSON.stringify(selectedWatchlist)})`);
       }
     });
   };

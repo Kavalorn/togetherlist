@@ -333,6 +333,7 @@ export function useWatchlists() {
     onSuccess: () => {
       // Інвалідація кешу після успішного видалення
       queryClient.invalidateQueries({ queryKey: ['watchlists'] });
+      queryClient.invalidateQueries({ queryKey: ['watchlist', 1] }); // Unsorted watchlist
     },
   });
   
