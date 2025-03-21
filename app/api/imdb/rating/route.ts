@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
       title: '',
       year: '',
       rating: 0,
-      votes: 0,
+      votes: '',
       poster: ''
     };
     
@@ -105,16 +105,9 @@ export async function GET(request: NextRequest) {
     // third element after ratingElement
     const votesElement = $movie('[data-testid="hero-rating-bar__aggregate-rating__score"]').next().next();
     if (votesElement.length) {
-      const votesText = votesElement.text().trim();
-      // Видаляємо "K" або "M" та конвертуємо у число
-      const votesClean = votesText.replace(/[^\d.]/g, '');
-      
-      if (votesText.includes('K')) {
-        result.votes = Math.round(parseFloat(votesClean) * 1000);
-      } else if (votesText.includes('M')) {
-        result.votes = Math.round(parseFloat(votesClean) * 1000000);
-      } else {
-        result.votes = parseInt(votesClean, 10) || 0;
+      const votesText = votesElement.slice(0, 1).text();
+      if (!result.votes) {
+        result.votes = votesText;
       }
     }
     
