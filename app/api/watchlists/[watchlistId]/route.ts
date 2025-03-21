@@ -103,7 +103,7 @@ export async function GET(
 // PATCH - Оновлення списку перегляду
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { watchlistId: string } }
 ) {
   try {
     const supabase = createSupabaseServerClient();
@@ -127,7 +127,7 @@ export async function PATCH(
       );
     }
 
-    const { id } = params;
+    const { watchlistId: id } = params;
     
     const watchlistId = parseInt(id, 10);
     
