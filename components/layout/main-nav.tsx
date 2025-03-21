@@ -82,22 +82,16 @@ export function MainNav() {
   // Навігаційні елементи, що потребують авторизації
   const authNavItems = [
     {
-      href: "/watchlist",
-      label: "Список перегляду",
-      icon: <BookmarkIcon className="h-4 w-4 mr-2" />,
-      isActive: pathname === "/watchlist"
+      href: "/favorite-actors",
+      label: "Улюблені актори",
+      icon: <Heart className="h-4 w-4 mr-2" />,
+      isActive: pathname === "/favorite-actors"
     },
     {
       href: "/archive",
       label: "Архів",
       icon: <Eye className="h-4 w-4 mr-2" />,
       isActive: pathname === "/archive"
-    },
-    {
-      href: "/favorite-actors",
-      label: "Улюблені актори",
-      icon: <Heart className="h-4 w-4 mr-2" />,
-      isActive: pathname === "/favorite-actors"
     },
     {
       href: "/friends",

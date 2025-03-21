@@ -331,9 +331,10 @@ export function useWatchlists() {
   const deleteMutation = useMutation({
     mutationFn: (id: number) => deleteWatchlist(id, token),
     onSuccess: () => {
+      const defaultWatchlist = getDefaultWatchlist();
       // Інвалідація кешу після успішного видалення
       queryClient.invalidateQueries({ queryKey: ['watchlists'] });
-      queryClient.invalidateQueries({ queryKey: ['watchlist', 1] }); // Unsorted watchlist
+      queryClient.invalidateQueries({ queryKey: ['watchlist', defaultWatchlist?.id] }); // Unsorted watchlist
     },
   });
   
