@@ -39,6 +39,7 @@ export default function RootLayout({
           <TanstackQueryProvider>
             <div className="relative flex min-h-screen flex-col">
               <MainNav />
+              <div className="h-16"></div>
               <main className="flex-1 container mx-auto py-8 px-4">{children}</main>
               <MovieDetailsModal />
               <ActorDetailsModal />
