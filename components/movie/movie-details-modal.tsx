@@ -26,6 +26,7 @@ import { useMovieTranslations } from '@/hooks/use-movie-translations';
 import { LanguageSelector } from './language-selector';
 import { Globe } from 'lucide-react';
 import { WatchlistSelector } from '../watchlist/watchlist-selector';
+import { MovieRatingComparison } from '@/components/movie/movie-rating-comparison';
 
 // Функція для безпечного перетворення значення на число
 function safeNumberConversion(value: any): number {
@@ -349,6 +350,15 @@ export function MovieDetailsModal() {
               ) : (
                 <p className="text-muted-foreground text-sm">Опис відсутній</p>
               )}
+
+              <div className="mt-6">
+                <MovieRatingComparison 
+                  movieTitle={selectedMovie.title}
+                  movieYear={selectedMovie.release_date ? new Date(selectedMovie.release_date).getFullYear().toString() : undefined}
+                  tmdbRating={selectedMovie.vote_average}
+                  tmdbVotes={voteCount}
+                />
+              </div>
 
               {selectedMovie.genres && selectedMovie.genres.length > 0 && (
                 <div>
