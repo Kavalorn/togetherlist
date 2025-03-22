@@ -11,7 +11,7 @@ import { useWatchlist } from '@/hooks/use-watchlist';
 import { useWatchedMovies } from '@/hooks/use-watched-movies';
 import { useMovieCredits, useMovieImages } from '@/hooks/use-movies';
 import {
-  Bookmark, BookmarkCheck, Star, Calendar, Clock,
+  Star, Calendar, Clock,
   Eye, EyeOff, Users, Loader2,
   Film
 } from 'lucide-react';
@@ -27,6 +27,7 @@ import { LanguageSelector } from './language-selector';
 import { Globe } from 'lucide-react';
 import { WatchlistSelector } from '../watchlist/watchlist-selector';
 import { MovieRatingComparison } from '@/components/movie/movie-rating-comparison';
+import { UAServiceFinder } from '@/components/movie/ua-service-finder';
 
 // Функція для безпечного перетворення значення на число
 function safeNumberConversion(value: any): number {
@@ -357,6 +358,14 @@ export function MovieDetailsModal() {
                   movieYear={selectedMovie.release_date ? new Date(selectedMovie.release_date).getFullYear().toString() : undefined}
                   tmdbRating={selectedMovie.vote_average}
                   tmdbVotes={voteCount}
+                />
+              </div>
+
+              <div className="mt-6">
+                <h3 className="font-medium mb-2">Де э фільм?</h3>
+                <UAServiceFinder 
+                  movieTitle={selectedMovie.title}
+                  movieYear={selectedMovie.release_date ? new Date(selectedMovie.release_date).getFullYear().toString() : undefined}
                 />
               </div>
 
