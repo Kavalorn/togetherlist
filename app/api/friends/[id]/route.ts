@@ -33,8 +33,9 @@ export async function PATCH(
         { status: 401 }
       );
     }
-    
-    const friendshipId = parseInt(params.id, 10);
+
+    const { id } = await params;
+    const friendshipId = parseInt(id, 10);
     
     if (isNaN(friendshipId)) {
       return NextResponse.json(

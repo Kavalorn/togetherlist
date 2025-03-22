@@ -32,7 +32,7 @@ export async function GET(
       );
     }
 
-    const { watchlistId: id } = params;
+    const { watchlistId: id } = await params;
     
     const watchlistId = parseInt(id, 10);
     
@@ -127,7 +127,7 @@ export async function PATCH(
       );
     }
 
-    const { watchlistId: id } = params;
+    const { watchlistId: id } = await params;
     
     const watchlistId = parseInt(id, 10);
     
@@ -267,7 +267,7 @@ export async function DELETE(
       );
     }
 
-    const { watchlistId: id } = params;
+    const { watchlistId: id } = await params;
     
     const watchlistId = parseInt(id, 10);
     

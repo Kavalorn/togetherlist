@@ -226,13 +226,7 @@ export const tmdbApi = {
       '/search/movie',
       { query, page: page.toString(), ...showLanguage }
     );
-    
-    // Додаткове логування для відлагодження
-    console.log("Результати пошуку фільмів:", result.results.map(movie => ({
-      id: movie.id,
-      title: movie.title,
-      vote_count: movie.vote_count
-    })));
+
     
     return result;
   },
