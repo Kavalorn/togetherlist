@@ -1,7 +1,12 @@
+// Файл: hooks/use-movie-translations.ts
 import { useState, useEffect, useRef } from 'react';
 import { MovieTranslation } from '@/lib/tmdb';
 
-export function useMovieTranslations(movieId: number | null, originalOverview: string | undefined) {
+export function useMovieTranslations(
+  movieId: number | null, 
+  originalOverview: string | undefined,
+  originalTitle: string | undefined
+) {
   const [translations, setTranslations] = useState<MovieTranslation[]>([]);
   const [selectedTranslation, setSelectedTranslation] = useState<MovieTranslation | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -31,9 +36,11 @@ export function useMovieTranslations(movieId: number | null, originalOverview: s
         
         const data = await response.json();
         
-        // Фільтруємо переклади, залишаючи тільки ті, що мають опис
+        // Фільтруємо переклади, залишаючи тільки ті, що мають опис або заголовок
         const validTranslations = data.translations.filter(
-          (t: MovieTranslation) => t.data.overview && t.data.overview.trim() !== ''
+          (t: MovieTranslation) => 
+            (t.data.overview && t.data.overview.trim() !== '') ||
+            (t.data.title && t.data.title.trim() !== '')
         );
         
         console.log(`Завантажено ${validTranslations.length} перекладів для фільму ${movieId}`);
@@ -54,6 +61,12 @@ export function useMovieTranslations(movieId: number | null, originalOverview: s
         
         if (foundTranslation) {
           console.log(`Вибрано переклад: ${foundTranslation.iso_639_1}-${foundTranslation.iso_3166_1} (${foundTranslation.name})`);
+          
+          // Логуємо наявні поля перекладу
+          console.log("Переклад містить:", {
+            title: !!foundTranslation.data.title,
+            overview: !!foundTranslation.data.overview
+          });
         }
         
         setSelectedTranslation(foundTranslation || null);
@@ -69,6 +82,10 @@ export function useMovieTranslations(movieId: number | null, originalOverview: s
 
   const changeLanguage = (translation: MovieTranslation) => {
     console.log(`Зміна мови на: ${translation.iso_639_1}-${translation.iso_3166_1} (${translation.name})`);
+    console.log("Переклад містить:", {
+      title: !!translation.data.title,
+      overview: !!translation.data.overview
+    });
     setSelectedTranslation(translation);
   };
 
@@ -91,12 +108,19 @@ export function useMovieTranslations(movieId: number | null, originalOverview: s
     changeLanguage,
     openLanguageSelector,
     closeLanguageSelector,
-    // Додаємо нову функцію для зручності
+    // Функція для отримання опису
     getDescription: () => {
       if (selectedTranslation?.data?.overview) {
         return selectedTranslation.data.overview;
       }
       return originalOverview || 'Опис відсутній';
+    },
+    // Нова функція для отримання заголовка
+    getTitle: () => {
+      if (selectedTranslation?.data?.title) {
+        return selectedTranslation.data.title;
+      }
+      return originalTitle || 'Назва відсутня';
     }
   };
 }

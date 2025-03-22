@@ -20,6 +20,7 @@ import { useMovieTranslations } from '@/hooks/use-movie-translations';
 import { LanguageSelector } from './language-selector';
 import { Globe } from 'lucide-react';
 import { WatchlistSelector } from '@/components/watchlist/watchlist-selector';
+import { LanguageIndicator } from '@/components/movie/language-indicator';
 
 // Функція для безпечного перетворення значення на число
 function safeNumberConversion(value: any): number {
@@ -52,8 +53,10 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
     isLanguageSelectorOpen,
     openLanguageSelector,
     closeLanguageSelector,
-    changeLanguage
-  } = useMovieTranslations(movie.id, movie.overview);
+    changeLanguage,
+    getTitle,
+    getDescription
+  } = useMovieTranslations(movie.id, movie.overview, movie.title);
 
   // Забезпечуємо, що у нас є значення рейтингу та кількості голосів
   const voteAverage = movie.vote_average !== undefined ? movie.vote_average : movieDetails?.vote_average || 0;
@@ -286,9 +289,20 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
           )}
         </div>
         <CardContent className="p-3">
-          <h3 className="font-bold text-sm line-clamp-2 cursor-pointer" onClick={handleOpenDetails}>
-            {movie.title} {movieWatched && <Eye className="inline h-3 w-3 ml-1 text-blue-500" />}
-          </h3>
+        <h3 className="font-bold text-sm line-clamp-2 cursor-pointer" onClick={handleOpenDetails}>
+  {getTitle()} {movieWatched && <Eye className="inline h-3 w-3 ml-1 text-blue-500" />}
+  {selectedTranslation && (
+    <LanguageIndicator 
+      selectedTranslation={selectedTranslation} 
+      onClick={(e) => {
+        e.stopPropagation(); // Запобігаємо відкриттю деталей фільму
+        openLanguageSelector();
+      }}
+      size="sm"
+      className="ml-1 inline-flex"
+    />
+  )}
+</h3>
           <p className="text-xs text-muted-foreground">
             {movie.release_date ? format(new Date(movie.release_date), 'yyyy') : 'Невідома дата'}
           </p>
@@ -378,29 +392,25 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
             className="text-base sm:text-xl font-bold tracking-tight mb-1 cursor-pointer"
             onClick={handleOpenDetails}
           >
-            {movie.title} {movieWatched && <Eye className="inline h-4 w-4 ml-1 text-blue-500" />}
+            {getTitle()} {movieWatched && <Eye className="inline h-4 w-4 ml-1 text-blue-500" />}
+            {selectedTranslation && (
+    <LanguageIndicator 
+      selectedTranslation={selectedTranslation} 
+      onClick={(e) => {
+        e.stopPropagation(); // Запобігаємо відкриттю деталей фільму
+        openLanguageSelector();
+      }}
+      size="sm"
+      className="ml-2 inline-flex"
+    />
+  )}
           </h2>
           <p className="text-xs sm:text-sm text-muted-foreground mb-2">
             {movie.release_date ? format(new Date(movie.release_date), 'dd MMM yyyy') : 'Невідома дата'}
           </p>
           <p className="text-xs sm:text-sm line-clamp-3 mb-3">
-            {selectedTranslation ? selectedTranslation.data.overview : (movie.overview || 'Опис відсутній')}
-          </p>
-          {hasMultipleTranslations && (
-            <div className="mb-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  openLanguageSelector();
-                }}
-              >
-                <Globe className="mr-2 h-3 w-3" />
-                <span className="text-xs">{selectedTranslation ? selectedTranslation.name : 'Змінити мову опису'}</span>
-              </Button>
-            </div>
-          )}
+  {getDescription()}
+</p>
 
           {/* Компонент вибору мови */}
           <LanguageSelector

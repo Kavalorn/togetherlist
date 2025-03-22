@@ -34,6 +34,7 @@ import { useMovieTrailer } from '@/hooks/use-movie-trailer';
 import { useMovieTranslations } from '@/hooks/use-movie-translations';
 import { LanguageSelector } from './language-selector';
 import { Globe } from 'lucide-react';
+import { LanguageIndicator } from '@/components/movie/language-indicator';
 
 // Функція для безпечного перетворення значення на число
 function safeNumberConversion(value: any): number {
@@ -85,8 +86,10 @@ export function MovieSwiper() {
     isLanguageSelectorOpen,
     openLanguageSelector,
     closeLanguageSelector,
-    changeLanguage
-  } = useMovieTranslations(currentMovie?.id || null, currentMovie?.overview);
+    changeLanguage,
+    getTitle,
+    getDescription
+  } = useMovieTranslations(currentMovie?.id || null, currentMovie?.overview, currentMovie?.title);
 
   // Початкові значення фільтрів з localStorage або за замовчуванням
   const [filters, setFilters] = useState<MovieFilters>(() => {
@@ -210,7 +213,7 @@ export function MovieSwiper() {
       // Видаляємо з переглянутих
       removeFromWatched(currentMovie.id, {
         onSuccess: () => {
-          toast.success(`"${currentMovie.title}" прибрано з переглянутих фільмів`);
+          toast.success(`"${getTitle()}" прибрано з переглянутих фільмів`);
           setIsMarkingWatched(false);
         },
         onError: (error: any) => {
@@ -222,7 +225,7 @@ export function MovieSwiper() {
       // Позначаємо як переглянутий
       markAsWatched({ movie: movieData as any }, {
         onSuccess: () => {
-          toast.success(`"${currentMovie.title}" позначено як переглянутий`);
+          toast.success(`"${getTitle()}" позначено як переглянутий`);
           setIsMarkingWatched(false);
         },
         onError: (error: any) => {
@@ -493,7 +496,7 @@ export function MovieSwiper() {
                   {currentMovie.poster_path ? (
                     <Image
                       src={`https://image.tmdb.org/t/p/w780${currentMovie.poster_path}`}
-                      alt={currentMovie.title}
+                      alt={getTitle()}
                       fill
                       className={`object-cover ${movieWatched ? 'opacity-80' : ''}`}
                       priority
@@ -561,28 +564,21 @@ export function MovieSwiper() {
                             Переглянуто
                           </Badge>
                         )}
+                          {selectedTranslation && (
+                            <LanguageIndicator 
+                              selectedTranslation={selectedTranslation} 
+                              onClick={openLanguageSelector} 
+                              size="sm" 
+                              className="bg-black/20 text-white border-none"
+                            />
+                          )}
                       </div>
                       <h2 className="text-xl sm:text-2xl font-bold text-white mb-1 drop-shadow-md line-clamp-2">
-                        {currentMovie.title}
-                      </h2>
-                      <p className="text-white/90 text-xs sm:text-sm line-clamp-2 drop-shadow-md mb-2">
-                        {selectedTranslation
-                          ? selectedTranslation.data.overview
-                          : (currentMovie?.overview || 'Опис відсутній')}
-                      </p>
-                      {hasMultipleTranslations && (
-                        <div className="mb-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="bg-black/30 text-white border-white/30 hover:bg-black/50"
-                            onClick={openLanguageSelector}
-                          >
-                            <Globe className="mr-2 h-3 w-3" />
-                            <span className="text-xs">{selectedTranslation ? selectedTranslation.name : 'Змінити мову'}</span>
-                          </Button>
-                        </div>
-                      )}
+  {getTitle()}
+</h2>
+<p className="text-white/90 text-xs sm:text-sm line-clamp-2 drop-shadow-md mb-2">
+  {getDescription()}
+</p>
 
                       <LanguageSelector
                         key={`lang-selector-${currentMovie?.id || 0}`}
