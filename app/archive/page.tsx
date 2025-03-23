@@ -212,7 +212,7 @@ function ArchiveContent() {
                 </SheetDescription>
               </SheetHeader>
               
-              <div className="py-4 space-y-6">
+              <div className="p-4 space-y-6">
                 <div className="space-y-2">
                   <Label>Сортувати за</Label>
                   <Select value={sortBy} onValueChange={(value) => setSortBy(value as any)}>
