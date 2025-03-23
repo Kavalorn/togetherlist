@@ -29,6 +29,7 @@ import { WatchlistSelector } from '../watchlist/watchlist-selector';
 import { MovieRatingComparison } from '@/components/movie/movie-rating-comparison';
 import { UAServiceFinder } from '@/components/movie/ua-service-finder';
 import { MovieProviders } from './movie-providers';
+import { MovieRecommendations } from './movie-recommendations';
 
 // Функція для безпечного перетворення значення на число
 function safeNumberConversion(value: any): number {
@@ -376,6 +377,10 @@ export function MovieDetailsModal() {
 
               <div className="mt-6">
                 <MovieProviders movieId={selectedMovie.id} />
+              </div>
+
+              <div className="mt-6">
+                <MovieRecommendations movie={selectedMovie} />
               </div>
 
               {selectedMovie.genres && selectedMovie.genres.length > 0 && (
