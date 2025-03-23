@@ -28,6 +28,7 @@ import { Globe } from 'lucide-react';
 import { WatchlistSelector } from '../watchlist/watchlist-selector';
 import { MovieRatingComparison } from '@/components/movie/movie-rating-comparison';
 import { UAServiceFinder } from '@/components/movie/ua-service-finder';
+import { MovieProviders } from './movie-providers';
 
 // Функція для безпечного перетворення значення на число
 function safeNumberConversion(value: any): number {
@@ -364,11 +365,17 @@ export function MovieDetailsModal() {
               </div>
 
               <div className="mt-6">
-                <h3 className="font-medium mb-2">Де э фільм?</h3>
-                <UAServiceFinder 
-                  movieTitle={getTitle()}
-                  movieYear={selectedMovie.release_date ? new Date(selectedMovie.release_date).getFullYear().toString() : undefined}
-                />
+                <div className='border rounded-lg p-4'>
+                  <h3 className="font-medium mb-2">Безкоштовні стрімінг платформи</h3>
+                  <UAServiceFinder 
+                    movieTitle={getTitle()}
+                    movieYear={selectedMovie.release_date ? new Date(selectedMovie.release_date).getFullYear().toString() : undefined}
+                  />
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <MovieProviders movieId={selectedMovie.id} />
               </div>
 
               {selectedMovie.genres && selectedMovie.genres.length > 0 && (

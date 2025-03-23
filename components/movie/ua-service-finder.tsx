@@ -314,7 +314,7 @@ export function UAServiceFinder({ movieTitle, movieYear, className }: UAServiceF
           ) : (
             <>
               <MousePointerClick className="mr-2 h-4 w-4" />
-              Перевірити всі сервіси
+              Перевірити всі
             </>
           )}
         </Button>

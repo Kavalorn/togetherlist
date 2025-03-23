@@ -161,6 +161,32 @@ interface RandomMovieFilters {
   genre?: string | null;
 }
 
+// Інтерфейс для провайдера фільму
+export interface Provider {
+  provider_id: number;
+  provider_name: string;
+  logo_path: string;
+  display_priority: number;
+}
+
+// Категорії доступу до фільму для країни
+export interface CountryProviders {
+  link?: string; // Посилання на TMDB для всіх провайдерів
+  buy?: Provider[]; // Купити
+  rent?: Provider[]; // Орендувати
+  flatrate?: Provider[]; // Підписка (стрімінгові сервіси)
+  free?: Provider[]; // Безкоштовні
+  ads?: Provider[]; // Безкоштовні з рекламою
+}
+
+// Структура відповіді API для провайдерів
+export interface MovieProviders {
+  id: number;
+  results: {
+    [country: string]: CountryProviders;
+  }
+}
+
 const showLanguage = {
   language: 'uk-UA'
 }
@@ -244,6 +270,9 @@ export const tmdbApi = {
     
     return result;
   },
+
+  getMovieProviders: (id: number) =>
+    fetchFromTMDB<MovieProviders>(`/movie/${id}/watch/providers`),
 
   // Отримання акторського складу фільму
   getMovieCredits: (id: number) =>
