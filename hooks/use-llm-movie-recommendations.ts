@@ -3,24 +3,18 @@
 
 import { useState } from 'react';
 import { MovieDetails, Movie } from '@/lib/tmdb';
-import { useUIStore } from '@/store/ui-store';
 
 // Моделі для рекомендацій фільмів
 export const LLM_MODELS = [
     { id: 'mistralai/Mistral-7B-Instruct-v0.2', name: 'Mistral-7B' },
-    { id: 'google/flan-t5-xl', name: 'Flan-T5 XL' },
-    { id: 'google/flan-t5-xxl', name: 'Flan-T5 XXL' },
-    { id: 'microsoft/phi-2', name: 'Phi-2' },
-    { id: 'TheBloke/Wizard-Vicuna-7B-Uncensored-HF', name: 'Wizard Vicuna 7B' },
-    { id: 'stabilityai/stablelm-base-alpha-7b', name: 'StableLM 7B' },
-    { id: 'Salesforce/blip-image-captioning-large', name: 'BLIP (для аналізу постерів)' }
-  ];
-
+];
 
 // Типи для рекомендацій
 export interface MovieRecommendation {
   title: string;
   year?: string;
+  description?: string;
+  reasons?: string[];
   tmdbMovie?: Movie;
   notFound?: boolean;
 }
@@ -32,13 +26,13 @@ export function useLLMMovieRecommendations() {
   const [selectedModel, setSelectedModel] = useState(LLM_MODELS[0].id);
   
   // Отримання рекомендацій на основі поточного фільму
-  const getRecommendations = async (movie: MovieDetails) => {
+  const getRecommendations = async (movie: MovieDetails, excludedTitles: string[] = []) => {
     try {
       setIsLoading(true);
       setError(null);
       
       // Формуємо запит до моделі
-      const prompt = createRecommendationPrompt(movie);
+      const prompt = createRecommendationPrompt(movie, excludedTitles);
       
       // Виконуємо запит до API
       const response = await fetch('/api/llm/recommendations', {
@@ -51,7 +45,8 @@ export function useLLMMovieRecommendations() {
           prompt,
           movieId: movie.id,
           movieTitle: movie.title,
-          genres: movie.genres?.map(g => g.name)
+          genres: movie.genres?.map(g => g.name),
+          excludedTitles
         }),
       });
       
@@ -71,20 +66,23 @@ export function useLLMMovieRecommendations() {
   };
   
   // Створення промпту для моделі
-  const createRecommendationPrompt = (movie: MovieDetails): string => {
+  const createRecommendationPrompt = (movie: MovieDetails, excludedTitles: string[] = []): string => {
     const genresText = movie.genres?.map(g => g.name).join(', ') || '';
+    const excludeList = excludedTitles.length > 0 
+      ? `\n\nDO NOT recommend any of these films: ${excludedTitles.join(', ')}`
+      : '';
     
     return `recommend only 3 films, similar to "${movie.title}" (${movie.release_date?.substring(0, 4) || 'unknown year'}).
     
 genre: ${genresText}
-description: ${movie.overview || 'no description'}
+description: ${movie.overview || 'no description'}${excludeList}
 
 response fromat - three rows with movie title and year:
-1. "movie name" (year)
-2. "movie name" (year)
-3. "movie name" (year)
+{"movie name" (year)}
+{"movie name" (year)}
+{"movie name" (year)}
 
-there shouldnt be anything except this three rows in the response. no new lines, no extra spaces. strictly follow the format. only real movie names and years are allowed.
+there shouldnt be anything except this three rows in the response. no new lines, no extra spaces. strictly follow the format. only real movie names and years are allowed. limit yourself EXCLUSIVELY to real, verified film names and years. Never invent the names of films, the years of their release.
 `;
   };
   

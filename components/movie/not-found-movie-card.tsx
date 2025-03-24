@@ -18,7 +18,7 @@ export function NotFoundMovieCard({ title, year }: NotFoundMovieCardProps) {
   };
 
   return (
-    <Card className="overflow-hidden hover:shadow-md transition-shadow duration-200 h-full flex flex-col">
+    <Card className="overflow-hidden hover:shadow-md transition-shadow duration-200 h-full flex flex-col p-0">
       <div className="relative aspect-[2/3] w-full bg-muted flex flex-col items-center justify-center p-4 text-center">
         <AlertCircle className="h-12 w-12 text-muted-foreground mb-2" />
         <h3 className="text-lg font-semibold mb-1">{title}</h3>
@@ -33,7 +33,7 @@ export function NotFoundMovieCard({ title, year }: NotFoundMovieCardProps) {
           className="w-full"
         >
           <Search className="mr-2 h-4 w-4" />
-          Шукати в Google
+          Google
         </Button>
       </CardContent>
     </Card>

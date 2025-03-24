@@ -18,14 +18,6 @@ interface RequestParams {
   movieTitle: string;
   genres?: string[];
 }
-
-function getLastThreeLines(text: string) {
-    // Розділяємо текст на рядки
-    const lines = text.split('\n');
-    
-    // Повертаємо останні три рядки, незалежно від їх вмісту
-    return lines.slice(-3).join('\n');
-  }
   
 
 export async function POST(request: NextRequest) {
@@ -74,7 +66,7 @@ async function getRecommendationsFromLLM(params: RequestParams): Promise<MovieRe
       body: JSON.stringify({
         inputs: params.prompt,
         parameters: {
-          max_new_tokens: 1024,
+          max_new_tokens: 100,
           temperature: 0.7,
           top_p: 0.9,
           do_sample: true
@@ -105,7 +97,7 @@ async function getRecommendationsFromLLM(params: RequestParams): Promise<MovieRe
     }
     
     // Парсинг тексту відповіді в структуровані рекомендації
-    return parseRecommendations(getLastThreeLines(modelOutput));
+    return parseRecommendations(modelOutput);
   } catch (error) {
     console.error('Помилка при запиті до Hugging Face:', error);
     
@@ -119,7 +111,7 @@ function parseRecommendations(text: string): MovieRecommendation[] {
   const recommendations: MovieRecommendation[] = [];
   
   // Шаблон для парсингу рекомендацій в форматі "1. "Назва фільму" (Рік)"
-  const recommendationPattern = /\d+\.\s+[""]([^""]+)[""](?:\s+\((\d{4})\))?/gs;
+  const recommendationPattern = /(?!{"movie name" \(year\)})\{[""]([^""]+)[""](?:\s+\((\d{4})\))?\}/gs;
   
   let match;
   while ((match = recommendationPattern.exec(text)) !== null) {
@@ -160,24 +152,24 @@ function generateFallbackRecommendations(params: RequestParams): MovieRecommenda
   // Заглушки для різних жанрів
   const genreRecommendations: Record<string, MovieRecommendation[]> = {
     'Драма': [
-      { title: 'Втеча з Шоушенка', year: '1994' },
-      { title: 'Форрест Гамп', year: '1994' },
-      { title: 'Зелена миля', year: '1999' }
+      { title: 'placeholder', year: '1994' },
+      { title: 'placeholder', year: '1994' },
+      { title: 'placeholder', year: '1999' }
     ],
     'Комедія': [
-      { title: 'Суперперці', year: '2007' },
-      { title: 'Похмілля у Вегасі', year: '2009' },
-      { title: 'Великий Лебовскі', year: '1998' }
+      { title: 'placeholder', year: '2007' },
+      { title: 'placeholder', year: '2009' },
+      { title: 'placeholder', year: '1998' }
     ],
     'Бойовик': [
-      { title: 'Джон Вік', year: '2014' },
-      { title: 'Матриця', year: '1999' },
-      { title: 'Темний лицар', year: '2008' }
+      { title: 'placeholder', year: '2014' },
+      { title: 'placeholder', year: '1999' },
+      { title: 'placeholder', year: '2008' }
     ],
     'Жахи': [
-      { title: 'Сяйво', year: '1980' },
-      { title: 'Спадковість', year: '2018' },
-      { title: 'Екзорцист', year: '1973' }
+      { title: 'placeholder', year: '1980' },
+      { title: 'placeholder', year: '2018' },
+      { title: 'placeholder', year: '1973' }
     ]
   };
   
@@ -195,11 +187,11 @@ function generateFallbackRecommendations(params: RequestParams): MovieRecommenda
   // Якщо не знайдено рекомендацій за жанрами, даємо змішані рекомендації
   if (fallbackRecs.length === 0) {
     fallbackRecs = [
-      { title: 'Початок', year: '2010' },
-      { title: 'Володар перснів: Хранителі персня', year: '2001' },
-      { title: 'Кримінальне чтиво', year: '1994' },
-      { title: 'Бійцівський клуб', year: '1999' },
-      { title: 'Інтерстеллар', year: '2014' }
+      { title: 'placeholder', year: '2010' },
+      { title: 'placeholder', year: '2001' },
+      { title: 'placeholder', year: '1994' },
+      { title: 'placeholder', year: '1999' },
+      { title: 'placeholder', year: '2014' }
     ];
   }
   
