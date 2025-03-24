@@ -19,6 +19,15 @@ interface RequestParams {
   genres?: string[];
 }
 
+function getLastThreeLines(text: string) {
+    // Розділяємо текст на рядки
+    const lines = text.split('\n');
+    
+    // Повертаємо останні три рядки, незалежно від їх вмісту
+    return lines.slice(-3).join('\n');
+  }
+  
+
 export async function POST(request: NextRequest) {
   try {
     // Отримуємо параметри запиту
@@ -79,7 +88,9 @@ async function getRecommendationsFromLLM(params: RequestParams): Promise<MovieRe
     }
     
     // Обробка відповіді
-    const data = await response.json();
+    let data = await response.json();
+
+    console.log('Отримано відповідь від Hugging Face:', data);
     
     let modelOutput = '';
     if (Array.isArray(data) && data.length > 0 && data[0].generated_text) {
@@ -94,7 +105,7 @@ async function getRecommendationsFromLLM(params: RequestParams): Promise<MovieRe
     }
     
     // Парсинг тексту відповіді в структуровані рекомендації
-    return parseRecommendations(modelOutput);
+    return parseRecommendations(getLastThreeLines(modelOutput));
   } catch (error) {
     console.error('Помилка при запиті до Hugging Face:', error);
     
@@ -207,7 +218,7 @@ async function processRecommendations(recommendations: MovieRecommendation[]): P
   for (const rec of processedRecs) {
     try {
       // Формуємо запит для пошуку в TMDB
-      const query = `${rec.title} ${rec.year || ''}`.trim();
+      const query = `${rec.title}`.trim();
       console.log(`Пошук фільму в TMDB: "${query}"`);
       
       // Виконуємо пошук через API
@@ -219,14 +230,6 @@ async function processRecommendations(recommendations: MovieRecommendation[]): P
         
         // Перевіряємо відповідність року, якщо рік указано в рекомендації
         let bestMatch = firstMatch;
-        if (rec.year) {
-          const matchWithYear = searchResults.results.find(
-            movie => movie.release_date && movie.release_date.startsWith(rec.year!)
-          );
-          if (matchWithYear) {
-            bestMatch = matchWithYear;
-          }
-        }
         
         enrichedRecs.push({
           ...rec,

@@ -5,13 +5,17 @@ import { useState } from 'react';
 import { MovieDetails, Movie } from '@/lib/tmdb';
 import { useUIStore } from '@/store/ui-store';
 
-// Доступні LLM моделі для рекомендацій
+// Моделі для рекомендацій фільмів
 export const LLM_MODELS = [
-  { id: 'facebook/bart-large-cnn', name: 'BART Large CNN' },
-  { id: 'google/flan-t5-xxl', name: 'Flan-T5 XXL' },
-  { id: 'mistralai/Mistral-7B-Instruct-v0.2', name: 'Mistral-7B' },
-  { id: 'meta-llama/Llama-2-70b-chat-hf', name: 'Llama 2 70B' },
-];
+    { id: 'mistralai/Mistral-7B-Instruct-v0.2', name: 'Mistral-7B' },
+    { id: 'google/flan-t5-xl', name: 'Flan-T5 XL' },
+    { id: 'google/flan-t5-xxl', name: 'Flan-T5 XXL' },
+    { id: 'microsoft/phi-2', name: 'Phi-2' },
+    { id: 'TheBloke/Wizard-Vicuna-7B-Uncensored-HF', name: 'Wizard Vicuna 7B' },
+    { id: 'stabilityai/stablelm-base-alpha-7b', name: 'StableLM 7B' },
+    { id: 'Salesforce/blip-image-captioning-large', name: 'BLIP (для аналізу постерів)' }
+  ];
+
 
 // Типи для рекомендацій
 export interface MovieRecommendation {
@@ -70,17 +74,18 @@ export function useLLMMovieRecommendations() {
   const createRecommendationPrompt = (movie: MovieDetails): string => {
     const genresText = movie.genres?.map(g => g.name).join(', ') || '';
     
-    return `Порекомендуй лише 3 фільми, схожих на "${movie.title}" (${movie.release_date?.substring(0, 4) || 'невідомий рік'}).
+    return `recommend only 3 films, similar to "${movie.title}" (${movie.release_date?.substring(0, 4) || 'unknown year'}).
     
-Жанри фільму: ${genresText}
-Опис фільму: ${movie.overview || 'опис відсутній'}
+genre: ${genresText}
+description: ${movie.overview || 'no description'}
 
-Формат відповіді - просто 3 рядки з назвами і роками:
-1. "Назва фільму" (Рік)
-2. "Назва фільму" (Рік)
-3. "Назва фільму" (Рік)
+response fromat - three rows with movie title and year:
+1. "movie name" (year)
+2. "movie name" (year)
+3. "movie name" (year)
 
-Потрібно вказати лише 3 найбільш релевантних фільми. Без опису і причин.`;
+there shouldnt be anything except this three rows in the response. no new lines, no extra spaces. strictly follow the format. only real movie names and years are allowed.
+`;
   };
   
   return {
