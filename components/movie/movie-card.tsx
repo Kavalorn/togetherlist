@@ -37,18 +37,13 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
   const { isWatched, markAsWatched, removeFromWatched, isRemoving, isMarking } = useWatchedMovies();
   const { openMovieDetailsModal } = useUIStore();
   const { data: movieDetails } = useMovieDetails(movie.id);
-  const [imageError, setImageError] = useState(false);
-  const [isRemovingLocal, setIsRemovingLocal] = useState(false);
-  const [isAddingLocal, setIsAddingLocal] = useState(false);
   const [isMarkingWatched, setIsMarkingWatched] = useState(false);
   const [trailerOpen, setTrailerOpen] = useState(false);
-  const { hasTrailer, isLoading: isCheckingTrailer } = useMovieTrailer(movie.id);
   const [isImageLoading, setIsImageLoading] = useState(true);
   const [imageLoadError, setImageLoadError] = useState(false);
 
   const {
     selectedTranslation,
-    hasMultipleTranslations,
     isLanguageSelectorOpen,
     openLanguageSelector,
     closeLanguageSelector,
@@ -147,7 +142,7 @@ const getPosterBackground = () => {
 
   {/* Лоадер або fallback під час завантаження зображення */}
   {isImageLoading && (
-    <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+    <div className="absolute inset-0 flex items-center justify-center bg-slate-800">
       <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
     </div>
   )}
@@ -215,36 +210,6 @@ const getPosterBackground = () => {
               />
               </TooltipTrigger>
             </Tooltip>
-
-            {/* Кнопка трейлера */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={`absolute bottom-2 right-2 p-1.5 rounded-full ${hasTrailer
-                      ? 'bg-white/80 hover:bg-white text-gray-600 hover:text-gray-800'
-                      : 'bg-gray-400/50 text-gray-500 cursor-not-allowed'
-                    }`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (hasTrailer) {
-                      setTrailerOpen(true);
-                    }
-                  }}
-                  disabled={!hasTrailer || isCheckingTrailer}
-                >
-                  {isCheckingTrailer ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : (
-                    <Film className="h-5 w-5" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {hasTrailer ? "Дивитися трейлер" : "Трейлер відсутній"}
-              </TooltipContent>
-            </Tooltip>
           </TooltipProvider>
 
           {movieWatched && (
@@ -304,7 +269,7 @@ const getPosterBackground = () => {
 
   {/* Лоадер або fallback під час завантаження зображення */}
   {isImageLoading && (
-    <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+    <div className="absolute inset-0 flex items-center justify-center bg-slate-800">
       <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
     </div>
   )}
@@ -426,24 +391,6 @@ const getPosterBackground = () => {
           >
             <Info className="mr-2 h-4 w-4" />
             Деталі
-          </Button>
-          <Button
-            variant="secondary"
-            className="w-full sm:flex-1"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (hasTrailer) {
-                setTrailerOpen(true);
-              }
-            }}
-            disabled={!hasTrailer || isCheckingTrailer}
-          >
-            {isCheckingTrailer ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Film className="mr-2 h-4 w-4" />
-            )}
-            {hasTrailer ? "Трейлер" : "Немає трейлера"}
           </Button>
         </CardFooter>
         <MovieTrailer

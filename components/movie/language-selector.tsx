@@ -119,30 +119,6 @@ export function LanguageSelector({
         
         {/* Додаємо пошук мови */}
         <div className="py-2">
-          <div className="relative mb-4">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Пошук мови..."
-              className="pl-8"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          
-          {isLoading ? (
-            <div className="flex justify-center items-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : error ? (
-            <div className="py-4 text-center text-red-500">
-              {error}
-            </div>
-          ) : filteredTranslations.length === 0 ? (
-            <div className="py-4 text-center">
-              {searchQuery ? "Немає мов, що відповідають пошуковому запиту" : "Немає доступних перекладів"}
-            </div>
-          ) : (
             <ScrollArea className="max-h-[60vh] pr-4 overflow-auto">
               <div className="space-y-2 py-2">
                 {filteredTranslations.map((translation) => (
@@ -173,7 +149,6 @@ export function LanguageSelector({
                 ))}
               </div>
             </ScrollArea>
-          )}
         </div>
         
         {/* Додаємо легенду */}
