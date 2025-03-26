@@ -7,7 +7,6 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Star, Info, Bookmark, BookmarkCheck, Eye, EyeOff, Loader2, Film } from 'lucide-react';
 import { Movie } from '@/lib/tmdb';
-import { useWatchlist } from '@/hooks/use-watchlist';
 import { useWatchedMovies } from '@/hooks/use-watched-movies';
 import { useUIStore } from '@/store/ui-store';
 import { useMovieDetails } from '@/hooks/use-movies';
@@ -18,7 +17,6 @@ import { MovieTrailer } from './movie-trailer';
 import { useMovieTrailer } from '@/hooks/use-movie-trailer';
 import { useMovieTranslations } from '@/hooks/use-movie-translations';
 import { LanguageSelector } from './language-selector';
-import { Globe } from 'lucide-react';
 import { WatchlistSelector } from '@/components/watchlist/watchlist-selector';
 import { LanguageIndicator } from '@/components/movie/language-indicator';
 
@@ -36,7 +34,6 @@ interface MovieCardProps {
 }
 
 export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
-  const { isInWatchlist, toggleWatchlist } = useWatchlist();
   const { isWatched, markAsWatched, removeFromWatched, isRemoving, isMarking } = useWatchedMovies();
   const { openMovieDetailsModal } = useUIStore();
   const { data: movieDetails } = useMovieDetails(movie.id);
@@ -46,6 +43,8 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
   const [isMarkingWatched, setIsMarkingWatched] = useState(false);
   const [trailerOpen, setTrailerOpen] = useState(false);
   const { hasTrailer, isLoading: isCheckingTrailer } = useMovieTrailer(movie.id);
+  const [isImageLoading, setIsImageLoading] = useState(true);
+  const [imageLoadError, setImageLoadError] = useState(false);
 
   const {
     selectedTranslation,
@@ -78,50 +77,12 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
     }
   };
 
-  // Обробник додавання до списку перегляду
-  const handleAddToWatchlist = () => {
-    // Переконуємося, що передаємо всі необхідні дані, включаючи vote_count
-    const movieData = {
-      id: movie.id,
-      title: movie.title,
-      poster_path: movie.poster_path,
-      release_date: movie.release_date,
-      overview: movie.overview,
-      vote_average: voteAverage,
-      vote_count: voteCount
-    };
-
-    toggleWatchlist(movieData as any);
-  };
-
-  // Обробник видалення фільму зі списку переглянутих
-  const handleRemoveFromWatched = () => {
-    setIsRemovingLocal(true);
-
-    // Видаляємо фільм зі списку переглянутих
-    removeFromWatched(movie.id);
-    toast.success(`"${movie.title}" прибрано з переглянутих фільмів`);
-    setIsRemovingLocal(false);
-  };
-
-  // Обробник додавання фільму до списку переглянутих
-  const handleAddToWatched = () => {
-    setIsAddingLocal(true);
-
-    const movieData = {
-      id: movie.id,
-      title: movie.title,
-      poster_path: movie.poster_path,
-      release_date: movie.release_date,
-      overview: movie.overview,
-      vote_average: voteAverage,
-      vote_count: voteCount
-    };
-
-    markAsWatched({ movie: movieData, options: {} });
-    toast.success(`"${movie.title}" позначено як переглянутий`);
-    setIsAddingLocal(false);
-  };
+  // Функція для генерації fallback зображення або кольору
+const getPosterBackground = () => {
+  // Генеруємо колір на основі ID фільму для консистентності
+  const hue = (movie.id % 360 + 1);
+  return `hsl(${hue}, 70%, 50%)`;
+};
 
   // Обробник для кнопки зміни статусу перегляду (око)
   const handleToggleWatched = (e: React.MouseEvent) => {
@@ -159,43 +120,52 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
     }
   };
 
-  const handleToggleWatchlist = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    
-    // Переконуємося, що передаємо всі необхідні дані, включаючи vote_count
-    const movieData = {
-      id: movie.id,
-      title: movie.title,
-      poster_path: movie.poster_path,
-      release_date: movie.release_date,
-      overview: movie.overview,
-      vote_average: voteAverage,
-      vote_count: voteCount // Використовуємо безпечне значення
-    };
-    
-    toggleWatchlist(movieData as any);
-    
-    // Відображаємо повідомлення про успішне додавання/видалення
-    if (isInWatchlist(movie.id)) {
-      toast.success(`"${movie.title}" видалено зі списку перегляду`);
-    } else {
-      toast.success(`"${movie.title}" додано до списку перегляду`);
-    }
-  };
-
   // Компактний варіант картки для списку фільмів актора
   if (variant === 'compact') {
     return (
       <Card className="overflow-hidden hover:shadow-md transition-shadow duration-200 p-0 h-full">
         <div className="relative aspect-[2/3] w-full">
-          <Image
-            src={movie.poster_path ? `https://image.tmdb.org/t/p/w342${movie.poster_path}` : '/placeholder-poster.png'}
-            alt={movie.title}
-            fill
-            className={`object-cover ${movieWatched ? 'opacity-70' : ''}`}
-            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
-            onError={() => setImageError(true)}
-          />
+        <Image
+    src={
+      imageLoadError || !movie.poster_path 
+        ? '/placeholder-poster.png' 
+        : `https://image.tmdb.org/t/p/w342${movie.poster_path}`
+    }
+    alt={movie.title}
+    fill
+    className={`object-cover ${movieWatched ? 'opacity-70' : ''} ${isImageLoading ? 'invisible' : 'visible'}`}
+    sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+    onError={() => {
+      setImageLoadError(true);
+      setIsImageLoading(false);
+    }}
+    onLoadingComplete={() => {
+      setIsImageLoading(false);
+      setImageLoadError(false);
+    }}
+  />
+
+  {/* Лоадер або fallback під час завантаження зображення */}
+  {isImageLoading && (
+    <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+      <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+    </div>
+  )}
+
+  {/* Fallback коли зображення не завантажилось */}
+  {imageLoadError && (
+    <div 
+      className="absolute inset-0 flex items-center justify-center"
+      style={{ backgroundColor: getPosterBackground() }}
+    >
+      <div className="text-white text-center">
+        <Film className="h-12 w-12 mx-auto mb-2" />
+        <p className="text-sm font-semibold max-w-[80%] mx-auto line-clamp-2">
+          {movie.title}
+        </p>
+      </div>
+    </div>
+  )}
           {voteAverage > 0 && (
             <div className="absolute top-2 left-2 bg-black/75 text-white px-2 py-1 rounded-md text-xs font-semibold flex items-center gap-1">
               <Star className="h-3 w-3 text-yellow-400 fill-yellow-400" />
@@ -244,9 +214,6 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
                 iconOnly={true}
               />
               </TooltipTrigger>
-              <TooltipContent>
-                {isInWatchlist(movie.id) ? "Прибрати зі списку" : "Додати до списку"}
-              </TooltipContent>
             </Tooltip>
 
             {/* Кнопка трейлера */}
@@ -315,15 +282,47 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
   return (
     <Card className="overflow-hidden hover:shadow-md transition-shadow duration-200 p-0 h-full flex flex-col">
       <div className="relative aspect-[2/3] w-full">
-        <Image
-          src={movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : '/placeholder-poster.png'}
-          alt={movie.title}
-          fill
-          className={`object-cover cursor-pointer ${movieWatched ? 'opacity-70' : ''}`}
-          onClick={handleOpenDetails}
-          sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-          onError={() => setImageError(true)}
-        />
+      <Image
+    src={
+      imageLoadError || !movie.poster_path 
+        ? '/placeholder-poster.png' 
+        : `https://image.tmdb.org/t/p/w342${movie.poster_path}`
+    }
+    alt={movie.title}
+    fill
+    className={`object-cover ${movieWatched ? 'opacity-70' : ''} ${isImageLoading ? 'invisible' : 'visible'}`}
+    sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+    onError={() => {
+      setImageLoadError(true);
+      setIsImageLoading(false);
+    }}
+    onLoadingComplete={() => {
+      setIsImageLoading(false);
+      setImageLoadError(false);
+    }}
+  />
+
+  {/* Лоадер або fallback під час завантаження зображення */}
+  {isImageLoading && (
+    <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+      <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+    </div>
+  )}
+
+  {/* Fallback коли зображення не завантажилось */}
+  {imageLoadError && (
+    <div 
+      className="absolute inset-0 flex items-center justify-center"
+      style={{ backgroundColor: getPosterBackground() }}
+    >
+      <div className="text-white text-center">
+        <Film className="h-12 w-12 mx-auto mb-2" />
+        <p className="text-sm font-semibold max-w-[80%] mx-auto line-clamp-2">
+          {movie.title}
+        </p>
+      </div>
+    </div>
+  )}
         {voteAverage > 0 && (
           <div className="absolute top-2 left-2 bg-black/75 text-white px-2 py-1 rounded-md text-xs sm:text-sm font-semibold flex items-center gap-1">
             <Star className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-400 fill-yellow-400" />
@@ -343,9 +342,6 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
               iconOnly={true} 
             />
             </TooltipTrigger>
-            <TooltipContent>
-              {isInWatchlist(movie.id) ? "Прибрати зі списку" : "Додати до списку"}
-            </TooltipContent>
           </Tooltip>
         </TooltipProvider>
 

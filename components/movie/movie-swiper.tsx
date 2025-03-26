@@ -8,7 +8,6 @@ import { useDrag } from '@use-gesture/react';
 import { Button } from '@/components/ui/button';
 import { Star, ThumbsDown, ThumbsUp, Info, Loader2, Filter, Eye, EyeOff, Film } from 'lucide-react';
 import { useMovieDetails } from '@/hooks/use-movies';
-import { useWatchlist } from '@/hooks/use-watchlist';
 import { useWatchedMovies } from '@/hooks/use-watched-movies';
 import { useUIStore } from '@/store/ui-store';
 import { Badge } from '../ui/badge';
@@ -69,7 +68,6 @@ export function MovieSwiper() {
   const [loading, setLoading] = useState(true);
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
   const [direction, setDirection] = useState<'left' | 'right' | null>(null);
-  const { isInWatchlist, toggleWatchlist } = useWatchlist();
   const { isWatched, markAsWatched, removeFromWatched, isMarking, isRemoving } = useWatchedMovies();
   const { openMovieDetailsModal } = useUIStore();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -272,7 +270,6 @@ export function MovieSwiper() {
 
       if (mx > 0) {
         // Свайп вправо (лайк)
-        handleLike();
       } else {
         // Свайп вліво (дизлайк)
         handleDislike();
@@ -303,20 +300,6 @@ export function MovieSwiper() {
     axis: 'x'
   });
 
-  // Обробник для кнопки "Лайк"
-  const handleLike = () => {
-    if (currentMovie && !isInWatchlist(currentMovie.id)) {
-      // Переконуємося, що передаємо коректні дані, включно з vote_count
-      const movieToAdd = {
-        ...currentMovie,
-        vote_count: safeNumberConversion(currentMovie.vote_count)
-      };
-
-      toggleWatchlist(movieToAdd as MovieDetails);
-      toast.success('Фільм додано до списку перегляду');
-    }
-  };
-
   // Обробник для кнопки "Дизлайк"
   const handleDislike = () => {
     // При дизлайку просто переходимо до наступного фільму
@@ -333,7 +316,6 @@ export function MovieSwiper() {
 
     setDirection('right');
     setGone(true);
-    handleLike();
 
     setTimeout(() => {
       setGone(false);

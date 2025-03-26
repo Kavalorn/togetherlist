@@ -7,7 +7,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUIStore } from '@/store/ui-store';
-import { useWatchlist } from '@/hooks/use-watchlist';
 import { useWatchedMovies } from '@/hooks/use-watched-movies';
 import { useMovieCredits, useMovieImages } from '@/hooks/use-movies';
 import {
@@ -41,7 +40,6 @@ function safeNumberConversion(value: any): number {
 
 export function MovieDetailsModal() {
   const { isMovieDetailsModalOpen, selectedMovie, closeMovieDetailsModal } = useUIStore();
-  const { isInWatchlist, toggleWatchlist } = useWatchlist();
   const { isWatched, markAsWatched, removeFromWatched, isMarking, isRemoving } = useWatchedMovies();
   const [trailerOpen, setTrailerOpen] = useState(false);
 
@@ -79,22 +77,6 @@ export function MovieDetailsModal() {
 
   // Перевіряємо чи фільм переглянуто
   const movieWatched = isWatched(selectedMovie.id);
-
-  // Функція для додавання до списку перегляду
-  const handleAddToWatchlist = () => {
-    // Забезпечуємо, що vote_count є числом
-    toggleWatchlist({
-      ...selectedMovie,
-      vote_count: voteCount
-    });
-
-    // Відображаємо повідомлення про успішне додавання/видалення
-    if (isInWatchlist(selectedMovie.id)) {
-      toast.success(`"${selectedMovie.title}" прибрано зі списку перегляду`);
-    } else {
-      toast.success(`"${selectedMovie.title}" додано до списку перегляду`);
-    }
-  };
 
   // Обробник позначення фільму як переглянутого
   const handleMarkAsWatched = () => {

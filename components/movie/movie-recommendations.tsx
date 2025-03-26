@@ -10,7 +10,6 @@ import {
   Search
 } from 'lucide-react';
 import { useWatchedMovies } from '@/hooks/use-watched-movies';
-import { useWatchlist } from '@/hooks/use-watchlist';
 import { useWatchlists } from '@/hooks/use-watchlists';
 import { 
   Checkbox
@@ -55,7 +54,6 @@ export function MovieRecommendations({ movie, className = '' }: MovieRecommendat
   } = useLLMMovieRecommendations();
   
   const { watchedMovies } = useWatchedMovies();
-  const { watchlist } = useWatchlist();
   const { watchlists } = useWatchlists();
   const [isOpen, setIsOpen] = useState(false);
   const [excludedTitles, setExcludedTitles] = useState<Set<string>>(new Set());
@@ -76,26 +74,7 @@ export function MovieRecommendations({ movie, className = '' }: MovieRecommendat
   
   // Функція для отримання списку назв фільмів у списках перегляду
   const getWatchlistedMovieTitles = (): string[] => {
-    if (!excludeWatchlisted) return [];
-    
-    // Збираємо всі фільми з усіх списків
-    const allWatchlistedMovies = new Set<string>();
-    
-    // З основного списку
-    watchlist.forEach(movie => {
-      if (movie.title) allWatchlistedMovies.add(movie.title);
-    });
-    
-    // З інших списків (якщо вони є)
-    watchlists.forEach(list => {
-      if (list.movies) {
-        list.movies.forEach(movie => {
-          if (movie.title) allWatchlistedMovies.add(movie.title);
-        });
-      }
-    });
-    
-    return Array.from(allWatchlistedMovies);
+    return [];
   };
   
   // Функція для генерації рекомендацій
