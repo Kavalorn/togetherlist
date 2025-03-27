@@ -983,6 +983,125 @@ export function MovieSwiper() {
           </div>
         </div>
       </div>
+
+            {/* Панель фільтрів */}
+      <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+        <SheetContent className="p-0 sm:max-w-md">
+          <div className="h-full flex flex-col">
+            <SheetHeader className="p-6 pb-2">
+              <SheetTitle>Фільтри</SheetTitle>
+              <SheetDescription>
+                Налаштуйте параметри для пошуку фільмів
+              </SheetDescription>
+            </SheetHeader>
+
+            <div className="px-6 py-4 flex-1 overflow-auto space-y-6">
+              {/* Рейтинг фільму */}
+              <div className="space-y-2">
+                <Label>Рейтинг фільму ({filters.minRating} - {filters.maxRating})</Label>
+                <Slider
+                  min={0}
+                  max={10}
+                  step={0.5}
+                  value={[filters.minRating, filters.maxRating]}
+                  onValueChange={(values) => setFilters({
+                    ...filters,
+                    minRating: values[0],
+                    maxRating: values[1]
+                  })}
+                />
+              </div>
+
+              {/* Рік випуску */}
+              <div className="space-y-2">
+                <Label>Рік випуску ({filters.minYear} - {filters.maxYear})</Label>
+                <Slider
+                  min={1900}
+                  max={currentYear}
+                  step={1}
+                  value={[filters.minYear, filters.maxYear]}
+                  onValueChange={(values) => setFilters({
+                    ...filters,
+                    minYear: values[0],
+                    maxYear: values[1]
+                  })}
+                />
+              </div>
+
+              {/* Мова */}
+              <div className="space-y-2">
+                <Label htmlFor="language">Мова</Label>
+                <Select
+                  value={filters.language}
+                  onValueChange={(value) => setFilters({ ...filters, language: value })}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Виберіть мову" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {languages.map(lang => (
+                      <SelectItem key={lang.code} value={lang.code}>
+                        {lang.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Жанр */}
+              <div className="space-y-2">
+                <Label htmlFor="genre">Жанр</Label>
+                <Select
+                  value={filters.genre || "any"}
+                  onValueChange={(value) => setFilters({ ...filters, genre: value === "any" ? null : value })}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Виберіть жанр" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="any">Будь-який</SelectItem>
+                    {genres.map(genre => (
+                      <SelectItem key={genre.id} value={genre.id.toString()}>
+                        {genre.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Включати дорослий контент */}
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="includeAdult"
+                  checked={filters.includeAdult}
+                  onCheckedChange={(checked) =>
+                    setFilters({ ...filters, includeAdult: Boolean(checked) })
+                  }
+                />
+                <Label htmlFor="includeAdult">Включати дорослий контент</Label>
+              </div>
+            </div>
+
+            <SheetFooter className="p-4 border-t">
+              <div className="flex flex-col gap-3 w-full">
+                <Button variant="outline" onClick={resetFilters} className="w-full">
+                  Скинути
+                </Button>
+                <SheetClose asChild>
+                  <Button onClick={applyFilters} className="w-full">
+                    Застосувати
+                  </Button>
+                </SheetClose>
+              </div>
+            </SheetFooter>
+          </div>
+        </SheetContent>
+      </Sheet>
+      <MovieTrailer
+        movieId={currentMovie?.id || 0}
+        isOpen={trailerOpen}
+        onClose={() => setTrailerOpen(false)}
+      />
     </>
   );
 };
