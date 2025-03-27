@@ -73,11 +73,11 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
   };
 
   // Функція для генерації fallback зображення або кольору
-const getPosterBackground = () => {
-  // Генеруємо колір на основі ID фільму для консистентності
-  const hue = (movie.id % 360 + 1);
-  return `hsl(${hue}, 70%, 50%)`;
-};
+  const getPosterBackground = () => {
+    // Генеруємо колір на основі ID фільму для консистентності
+    const hue = (movie.id % 360 + 1);
+    return `hsl(${hue}, 70%, 50%)`;
+  };
 
   // Обробник для кнопки зміни статусу перегляду (око)
   const handleToggleWatched = (e: React.MouseEvent) => {
@@ -115,54 +115,60 @@ const getPosterBackground = () => {
     }
   };
 
+  // Handle image load completion
+  const handleImageLoad = () => {
+    setIsImageLoading(false);
+  };
+
+  // Handle image load error
+  const handleImageError = () => {
+    setImageLoadError(true);
+    setIsImageLoading(false);
+  };
+
   // Компактний варіант картки для списку фільмів актора
   if (variant === 'compact') {
     return (
       <Card className="overflow-hidden hover:shadow-md transition-shadow duration-200 p-0 h-full">
-        <div className="relative aspect-[2/3] w-full">
-        <Image
-    src={
-      imageLoadError || !movie.poster_path 
-        ? '/placeholder-poster.png' 
-        : `https://image.tmdb.org/t/p/w342${movie.poster_path}`
-    }
-    alt={movie.title}
-    fill
-    className={`object-cover ${movieWatched ? 'opacity-70' : ''} ${isImageLoading ? 'invisible' : 'visible'}`}
-    sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
-    onError={() => {
-      setImageLoadError(true);
-      setIsImageLoading(false);
-    }}
-    onLoadingComplete={() => {
-      setIsImageLoading(false);
-      setImageLoadError(false);
-    }}
-  />
+        <div className="relative aspect-[2/3] w-full bg-slate-800">
+          {/* Лоадер під час завантаження зображення */}
+          {isImageLoading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-slate-800 animate-pulse">
+              <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+            </div>
+          )}
 
-  {/* Лоадер або fallback під час завантаження зображення */}
-  {isImageLoading && (
-    <div className="absolute inset-0 flex items-center justify-center bg-slate-800">
-      <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
-    </div>
-  )}
+          {/* Fallback коли зображення не завантажилось */}
+          {imageLoadError && !isImageLoading && (
+            <div 
+              className="absolute inset-0 flex items-center justify-center transition-opacity duration-300"
+              style={{ backgroundColor: getPosterBackground() }}
+            >
+              <div className="text-white text-center">
+                <Film className="h-12 w-12 mx-auto mb-2" />
+                <p className="text-sm font-semibold max-w-[80%] mx-auto line-clamp-2">
+                  {movie.title}
+                </p>
+              </div>
+            </div>
+          )}
 
-  {/* Fallback коли зображення не завантажилось */}
-  {imageLoadError && (
-    <div 
-      className="absolute inset-0 flex items-center justify-center"
-      style={{ backgroundColor: getPosterBackground() }}
-    >
-      <div className="text-white text-center">
-        <Film className="h-12 w-12 mx-auto mb-2" />
-        <p className="text-sm font-semibold max-w-[80%] mx-auto line-clamp-2">
-          {movie.title}
-        </p>
-      </div>
-    </div>
-  )}
+          <Image
+            src={
+              !movie.poster_path 
+                ? '/placeholder-poster.png' 
+                : `https://image.tmdb.org/t/p/w342${movie.poster_path}`
+            }
+            alt={movie.title}
+            fill
+            className={`object-cover transition-opacity duration-300 ${movieWatched ? 'opacity-70' : ''} ${isImageLoading ? 'opacity-0' : 'opacity-100'}`}
+            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+            onError={handleImageError}
+            onLoad={handleImageLoad}
+          />
+
           {voteAverage > 0 && (
-            <div className="absolute top-2 left-2 bg-black/75 text-white px-2 py-1 rounded-md text-xs font-semibold flex items-center gap-1">
+            <div className="absolute top-2 left-2 bg-black/75 text-white px-2 py-1 rounded-md text-xs font-semibold flex items-center gap-1 z-10">
               <Star className="h-3 w-3 text-yellow-400 fill-yellow-400" />
               <span>{voteAverage.toFixed(1)} ({voteCount})</span>
             </div>
@@ -175,7 +181,7 @@ const getPosterBackground = () => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className={`absolute bottom-2 left-2 p-1.5 rounded-full ${movieWatched
+                  className={`absolute bottom-2 left-2 p-1.5 rounded-full z-10 ${movieWatched
                       ? 'bg-blue-500 hover:bg-blue-600 text-white'
                       : 'bg-white/80 hover:bg-white text-gray-600 hover:text-gray-800'
                     }`}
@@ -205,7 +211,7 @@ const getPosterBackground = () => {
                 movie={movie} 
                 variant="ghost" 
                 size="icon" 
-                className="absolute top-2 right-2" 
+                className="absolute top-2 right-2 z-10" 
                 iconOnly={true}
               />
               </TooltipTrigger>
@@ -213,7 +219,7 @@ const getPosterBackground = () => {
           </TooltipProvider>
 
           {movieWatched && (
-            <div className="absolute inset-0 flex items-center justify-center">
+            <div className="absolute inset-0 flex items-center justify-center z-10">
               <div className="bg-blue-500/30 rounded-full p-2">
                 <Eye className="h-8 w-8 text-white" />
               </div>
@@ -221,20 +227,20 @@ const getPosterBackground = () => {
           )}
         </div>
         <CardContent className="p-3">
-        <h3 className="font-bold text-sm line-clamp-2 cursor-pointer" onClick={handleOpenDetails}>
-  {getTitle()} {movieWatched && <Eye className="inline h-3 w-3 ml-1 text-blue-500" />}
-  {selectedTranslation && (
-    <LanguageIndicator 
-      selectedTranslation={selectedTranslation} 
-      onClick={(e) => {
-        e.stopPropagation(); // Запобігаємо відкриттю деталей фільму
-        openLanguageSelector();
-      }}
-      size="sm"
-      className="ml-1 inline-flex"
-    />
-  )}
-</h3>
+          <h3 className="font-bold text-sm line-clamp-2 cursor-pointer" onClick={handleOpenDetails}>
+            {getTitle()} {movieWatched && <Eye className="inline h-3 w-3 ml-1 text-blue-500" />}
+            {selectedTranslation && (
+              <LanguageIndicator 
+                selectedTranslation={selectedTranslation} 
+                onClick={(e) => {
+                  e.stopPropagation(); // Запобігаємо відкриттю деталей фільму
+                  openLanguageSelector();
+                }}
+                size="sm"
+                className="ml-1 inline-flex"
+              />
+            )}
+          </h3>
           <p className="text-xs text-muted-foreground">
             {movie.release_date ? format(new Date(movie.release_date), 'yyyy') : 'Невідома дата'}
           </p>
@@ -246,50 +252,45 @@ const getPosterBackground = () => {
   // Повний варіант картки для результатів пошуку
   return (
     <Card className="overflow-hidden hover:shadow-md transition-shadow duration-200 p-0 h-full flex flex-col">
-      <div className="relative aspect-[2/3] w-full">
-      <Image
-    src={
-      imageLoadError || !movie.poster_path 
-        ? '/placeholder-poster.png' 
-        : `https://image.tmdb.org/t/p/w342${movie.poster_path}`
-    }
-    alt={movie.title}
-    fill
-    className={`object-cover ${movieWatched ? 'opacity-70' : ''} ${isImageLoading ? 'invisible' : 'visible'}`}
-    sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
-    onError={() => {
-      setImageLoadError(true);
-      setIsImageLoading(false);
-    }}
-    onLoadingComplete={() => {
-      setIsImageLoading(false);
-      setImageLoadError(false);
-    }}
-  />
+      <div className="relative aspect-[2/3] w-full bg-slate-800">
+        {/* Лоадер під час завантаження зображення */}
+        {isImageLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-slate-800 animate-pulse">
+            <Loader2 className="h-10 w-10 animate-spin text-gray-500" />
+          </div>
+        )}
 
-  {/* Лоадер або fallback під час завантаження зображення */}
-  {isImageLoading && (
-    <div className="absolute inset-0 flex items-center justify-center bg-slate-800">
-      <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
-    </div>
-  )}
+        {/* Fallback коли зображення не завантажилось */}
+        {imageLoadError && !isImageLoading && (
+          <div 
+            className="absolute inset-0 flex items-center justify-center transition-opacity duration-300"
+            style={{ backgroundColor: getPosterBackground() }}
+          >
+            <div className="text-white text-center">
+              <Film className="h-12 w-12 mx-auto mb-2" />
+              <p className="text-sm font-semibold max-w-[80%] mx-auto line-clamp-2">
+                {movie.title}
+              </p>
+            </div>
+          </div>
+        )}
 
-  {/* Fallback коли зображення не завантажилось */}
-  {imageLoadError && (
-    <div 
-      className="absolute inset-0 flex items-center justify-center"
-      style={{ backgroundColor: getPosterBackground() }}
-    >
-      <div className="text-white text-center">
-        <Film className="h-12 w-12 mx-auto mb-2" />
-        <p className="text-sm font-semibold max-w-[80%] mx-auto line-clamp-2">
-          {movie.title}
-        </p>
-      </div>
-    </div>
-  )}
+        <Image
+          src={
+            !movie.poster_path 
+              ? '/placeholder-poster.png' 
+              : `https://image.tmdb.org/t/p/w342${movie.poster_path}`
+          }
+          alt={movie.title}
+          fill
+          className={`object-cover transition-opacity duration-300 ${movieWatched ? 'opacity-70' : ''} ${isImageLoading ? 'opacity-0' : 'opacity-100'}`}
+          sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+          onError={handleImageError}
+          onLoad={handleImageLoad}
+        />
+
         {voteAverage > 0 && (
-          <div className="absolute top-2 left-2 bg-black/75 text-white px-2 py-1 rounded-md text-xs sm:text-sm font-semibold flex items-center gap-1">
+          <div className="absolute top-2 left-2 bg-black/75 text-white px-2 py-1 rounded-md text-xs sm:text-sm font-semibold flex items-center gap-1 z-10">
             <Star className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-400 fill-yellow-400" />
             <span>{voteAverage.toFixed(1)} ({voteCount})</span>
           </div>
@@ -303,7 +304,7 @@ const getPosterBackground = () => {
               movie={movie} 
               variant="ghost" 
               size="icon" 
-              className="absolute top-2 right-2" 
+              className="absolute top-2 right-2 z-10" 
               iconOnly={true} 
             />
             </TooltipTrigger>
@@ -317,7 +318,7 @@ const getPosterBackground = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                className={`absolute bottom-2 right-2 p-1.5 rounded-full ${movieWatched
+                className={`absolute bottom-2 right-2 p-1.5 rounded-full z-10 ${movieWatched
                     ? 'bg-blue-500 hover:bg-blue-600 text-white'
                     : 'bg-white/80 hover:bg-white text-gray-600 hover:text-gray-800'
                   }`}
@@ -340,7 +341,7 @@ const getPosterBackground = () => {
         </TooltipProvider>
 
         {movieWatched && (
-          <div className="absolute inset-0 flex items-center justify-center">
+          <div className="absolute inset-0 flex items-center justify-center z-10">
             <div className="bg-blue-500/30 rounded-full p-3">
               <Eye className="h-12 w-12 text-white" />
             </div>
@@ -355,23 +356,23 @@ const getPosterBackground = () => {
           >
             {getTitle()} {movieWatched && <Eye className="inline h-4 w-4 ml-1 text-blue-500" />}
             {selectedTranslation && (
-    <LanguageIndicator 
-      selectedTranslation={selectedTranslation} 
-      onClick={(e) => {
-        e.stopPropagation(); // Запобігаємо відкриттю деталей фільму
-        openLanguageSelector();
-      }}
-      size="sm"
-      className="ml-2 inline-flex"
-    />
-  )}
+              <LanguageIndicator 
+                selectedTranslation={selectedTranslation} 
+                onClick={(e) => {
+                  e.stopPropagation(); // Запобігаємо відкриттю деталей фільму
+                  openLanguageSelector();
+                }}
+                size="sm"
+                className="ml-2 inline-flex"
+              />
+            )}
           </h2>
           <p className="text-xs sm:text-sm text-muted-foreground mb-2">
             {movie.release_date ? format(new Date(movie.release_date), 'dd MMM yyyy') : 'Невідома дата'}
           </p>
           <p className="text-xs sm:text-sm line-clamp-3 mb-3">
-  {getDescription()}
-</p>
+            {getDescription()}
+          </p>
 
           {/* Компонент вибору мови */}
           <LanguageSelector

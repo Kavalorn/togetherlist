@@ -1,7 +1,7 @@
 // components/watchlist/watchlist-selector.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
   DropdownMenu, 
@@ -28,6 +28,10 @@ interface WatchlistSelectorProps {
   iconOnly?: boolean;
 }
 
+// Максимальное количество списков, для которых мы выделяем хуки
+// Это позволит избежать проблемы с изменением количества хуков
+const MAX_WATCHLISTS = 20;
+
 export function WatchlistSelector({
   movie,
   variant = 'outline',
@@ -42,18 +46,30 @@ export function WatchlistSelector({
   const [newWatchlistDescription, setNewWatchlistDescription] = useState('');
   const [newWatchlistColor, setNewWatchlistColor] = useState('#3b82f6');
   
-  // Для кожного списку створюємо окремі хуки на верхньому рівні компонента
-  // Створюємо об'єкт, де ключ - id списку, а значення - функції та стани для цього списку
-  const watchlistsDetails = {};
-  watchlists.forEach(watchlist => {
+  // Вызываем максимальное количество хуков заранее
+  // Это гарантирует, что количество хуков всегда будет стабильным
+  const watchlistDetailsArray = [];
+  for (let i = 0; i < MAX_WATCHLISTS; i++) {
+    // Сначала пытаемся использовать ID из watchlists если он существует
+    const listId = watchlists[i]?.id || -1;
     // eslint-disable-next-line react-hooks/rules-of-hooks
-    const details = useWatchlistDetails(watchlist.id);
-    watchlistsDetails[watchlist.id] = details;
+    const details = useWatchlistDetails(listId);
+    watchlistDetailsArray.push(details);
+  }
+  
+  // Создаем объект для удобного доступа
+  const watchlistsDetails = {};
+  watchlists.forEach((watchlist, index) => {
+    // Используем уже созданные хуки
+    if (index < MAX_WATCHLISTS) {
+      watchlistsDetails[watchlist.id] = watchlistDetailsArray[index];
+    }
   });
   
   // Перевіряємо, чи фільм є хоча б в одному списку
-  const isInAnyWatchlist = watchlists.some(list => {
-    const details = watchlistsDetails[list.id];
+  const isInAnyWatchlist = watchlists.some((list, index) => {
+    if (index >= MAX_WATCHLISTS) return false;
+    const details = watchlistDetailsArray[index];
     return details?.isMovieInWatchlist && details.isMovieInWatchlist(movie.id);
   });
   
@@ -103,8 +119,11 @@ export function WatchlistSelector({
   };
   
   // Функція для додавання/видалення фільму зі списку
-  const handleToggleInWatchlist = (watchlist: Watchlist) => {
-    const details = watchlistsDetails[watchlist.id];
+  const handleToggleInWatchlist = (watchlist: Watchlist, index: number) => {
+    // Проверяем, что индекс в пределах массива
+    if (index >= MAX_WATCHLISTS) return;
+    
+    const details = watchlistDetailsArray[index];
     if (!details) return;
     
     const isInThisWatchlist = details.isMovieInWatchlist && details.isMovieInWatchlist(movie.id);
@@ -175,14 +194,16 @@ export function WatchlistSelector({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
-          {watchlists.map((watchlist) => {
-            const details = watchlistsDetails[watchlist.id];
+          {watchlists.map((watchlist, index) => {
+            // Проверяем, что у нас есть соответствующий details объект
+            if (index >= MAX_WATCHLISTS) return null;
+            const details = watchlistDetailsArray[index];
             const isInThisWatchlist = details?.isMovieInWatchlist && details.isMovieInWatchlist(movie.id);
             
             return (
               <DropdownMenuItem 
                 key={watchlist.id}
-                onClick={() => handleToggleInWatchlist(watchlist)}
+                onClick={() => handleToggleInWatchlist(watchlist, index)}
                 className="cursor-pointer"
               >
                 <div 

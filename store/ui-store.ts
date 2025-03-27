@@ -37,6 +37,9 @@ interface UIState {
   setActiveTab: (tab: 'search' | 'watchlist' | 'actor' | 'actors') => void;
   setSearchQuery: (query: string) => void;
   setActorSearchQuery: (query: string) => void;
+
+  openMovieDetailsModalById: (id: number) => void;
+  isMovieDetailsModalLoading: boolean;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -45,6 +48,7 @@ export const useUIStore = create<UIState>((set) => ({
   isSignupModalOpen: false,
   isMovieDetailsModalOpen: false,
   isActorDetailsModalOpen: false,
+  isMovieDetailsModalLoading: false,
   
   activeTab: 'search',
   
@@ -61,14 +65,19 @@ export const useUIStore = create<UIState>((set) => ({
   openSignupModal: () => set({ isSignupModalOpen: true, isLoginModalOpen: false }),
   closeSignupModal: () => set({ isSignupModalOpen: false }),
   
-  openMovieDetailsModal: (movie) => set({ 
-    selectedMovie: movie, 
-    isMovieDetailsModalOpen: true 
-  }),
-  closeMovieDetailsModal: () => set({ 
-    isMovieDetailsModalOpen: false,
-    selectedMovie: null
-  }),
+  openMovieDetailsModal: (movie: MovieDetails) => {
+    set({ 
+      isMovieDetailsModalOpen: true, 
+      selectedMovie: movie,
+      isMovieDetailsModalLoading: false 
+    });
+  },
+  closeMovieDetailsModal: () => {
+    set({ 
+      isMovieDetailsModalOpen: false, 
+      isMovieDetailsModalLoading: false
+    });
+  },
   
   openActorDetailsModal: (actor) => set({ 
     selectedActor: actor, 
@@ -83,4 +92,37 @@ export const useUIStore = create<UIState>((set) => ({
   setActiveTab: (tab) => set({ activeTab: tab }),
   setSearchQuery: (query) => set({ searchQuery: query }),
   setActorSearchQuery: (query) => set({ actorSearchQuery: query }),
+
+  openMovieDetailsModalById: async (id: number) => {
+    try {
+      // Показываем состояние загрузки
+      set({ 
+        isMovieDetailsModalLoading: true,
+        isMovieDetailsModalOpen: true,
+        selectedMovie: null
+      });
+      
+      // Загружаем данные о фильме
+      const response = await fetch(`/api/movies/${id}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch movie details');
+      }
+      
+      const movieDetails = await response.json();
+      
+      // Обновляем модальное окно с полученными данными
+      set({ 
+        isMovieDetailsModalLoading: false,
+        selectedMovie: movieDetails 
+      });
+    } catch (error) {
+      console.error('Error opening movie details by ID:', error);
+      // Закрываем модальное окно в случае ошибки
+      set({ 
+        isMovieDetailsModalOpen: false,
+        isMovieDetailsModalLoading: false,
+        selectedMovie: null
+      });
+    }
+  },
 }));
