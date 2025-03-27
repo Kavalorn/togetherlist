@@ -28,12 +28,9 @@ import { Slider } from '@/components/ui/slider';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { MovieTrailer } from './movie-trailer';
-import { useMovieTrailer } from '@/hooks/use-movie-trailer';
-import { useMovieTranslations } from '@/hooks/use-movie-translations';
-import { LanguageSelector } from './language-selector';
-import { LanguageIndicator } from '@/components/movie/language-indicator';
-import { useWatchlistDetails, useWatchlists } from '@/hooks/use-watchlists';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import Image from 'next/image';
+import { useWatchlistDetails, useWatchlists } from '@/hooks/use-watchlists';
 
 // Функція для безпечного перетворення значення на число
 function safeNumberConversion(value: any): number {
@@ -66,57 +63,61 @@ function formatYear(dateString: string) {
   return new Date(dateString).getFullYear().toString();
 }
 
+// Тип для даних фільму з перекладами та інформацією про трейлер
+interface EnhancedMovie {
+  movie: Movie;
+  translations: {
+    selectedTranslation: any;
+    hasMultipleTranslations: boolean;
+    getTitle: () => string;
+    getDescription: () => string;
+  } | null;
+  trailer: {
+    hasTrailer: boolean;
+  } | null;
+  watched: boolean;
+}
+
 export function MovieSwiper() {
-  // Використовуємо масив фільмів замість одного поточного фільму
-  const [movies, setMovies] = useState<Movie[]>([]);
+  // Використовуємо масив фільмів з розширеними даними
+  const [enhancedMovies, setEnhancedMovies] = useState<EnhancedMovie[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
-  const [direction, setDirection] = useState<'left' | 'right' | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [isLanguageSelectorOpen, setIsLanguageSelectorOpen] = useState(false);
+  const [trailerOpen, setTrailerOpen] = useState(false);
+  const [isMarkingWatched, setIsMarkingWatched] = useState(false);
+  const currentYear = new Date().getFullYear();
+
+  // Використовуємо аніматор для визначення напрямку свайпу
+  const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
+
   const { isWatched, markAsWatched, removeFromWatched } = useWatchedMovies();
   const { watchlists, getDefaultWatchlist } = useWatchlists();
   const { openMovieDetailsModal } = useUIStore();
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  const currentYear = new Date().getFullYear();
-  const [isMarkingWatched, setIsMarkingWatched] = useState(false);
-  const [trailerOpen, setTrailerOpen] = useState(false);
-  
+
   // Отримуємо список перегляду за замовчуванням завчасно
   const defaultWatchlist = getDefaultWatchlist();
-  const { addMovie, isAddingMovie } = useWatchlistDetails(defaultWatchlist?.id || null);
-  
-  // Поточний фільм
-  const currentMovie = movies[currentIndex];
-  
-  // Стан анімації для поточної картки
-  const [{ x, rotation, scale }, api] = useSpring(() => ({
+  const { addMovie } = useWatchlistDetails(defaultWatchlist?.id || null);
+
+  // Стан для поточної та наступної картки (яка прилітає з-за меж екрану)
+  const [{ x: currentX, rotation: currentRotation, scale: currentScale }, currentApi] = useSpring(() => ({
     x: 0,
     rotation: 0,
     scale: 1,
     config: { tension: 300, friction: 20 }
   }));
-  
-  // Стан анімації для наступної картки (для входу)
-  const [{ x: nextX, rotation: nextRotation, opacity: nextOpacity }, nextApi] = useSpring(() => ({
-    x: windowSize.width, // Починаємо за межами екрана
-    rotation: 15, // Скос для наступної картки
-    opacity: 0,
+
+  // Стан для наступної картки (яка прилітає з-за меж екрану)
+  const [{ x: nextX, rotation: nextRotation, scale: nextScale, opacity: nextOpacity }, nextApi] = useSpring(() => ({
+    x: windowSize.width, // Починаємо за межами екрану
+    rotation: 15,        // Початковий скос для наступної картки
+    scale: 1,
+    opacity: 0,          // Початково невидима
     config: { tension: 300, friction: 25 }
   }));
-
-  const { hasTrailer, isLoading: isCheckingTrailer } = useMovieTrailer(currentMovie?.id || null);
-
-  const {
-    selectedTranslation,
-    hasMultipleTranslations,
-    isLanguageSelectorOpen,
-    openLanguageSelector,
-    closeLanguageSelector,
-    changeLanguage,
-    getTitle,
-    getDescription
-  } = useMovieTranslations(currentMovie?.id || null, currentMovie?.overview, currentMovie?.title);
 
   // Початкові значення фільтрів з localStorage або за замовчуванням
   const [filters, setFilters] = useState<MovieFilters>(() => {
@@ -150,12 +151,6 @@ export function MovieSwiper() {
     }
   }, [filters]);
 
-  // Отримуємо деталі поточного фільму
-  const { data: movieDetails } = useMovieDetails(currentMovie?.id || null);
-
-  // Перевіряємо чи фільм переглянуто
-  const movieWatched = currentMovie ? isWatched(currentMovie.id) : false;
-
   // Оновлюємо розмір вікна при завантаженні та зміні розміру
   useEffect(() => {
     const updateWindowSize = () => {
@@ -176,12 +171,89 @@ export function MovieSwiper() {
     };
   }, []);
 
-  // Функція для завантаження фільмів з урахуванням фільтрів
+  // Функція для асинхронного завантаження розширених даних фільму (переклади, трейлер)
+  const loadMovieEnhancements = async (movie: Movie): Promise<EnhancedMovie> => {
+    try {
+      // Перевіряємо наявність трейлера
+      const trailerResponse = await fetch(`/api/movies/${movie.id}/videos`);
+      const trailerData = await trailerResponse.json();
+
+      // Шукаємо офіційний трейлер
+      const hasTrailer = trailerData.results.some(
+        (video: any) => video.site === 'YouTube' && (video.type === 'Trailer' || video.type === 'Teaser')
+      );
+
+      // Завантажуємо переклади
+      const translationsResponse = await fetch(`/api/movies/${movie.id}/translations`);
+      const translationsData = await translationsResponse.json();
+
+      // Фільтруємо переклади, залишаючи тільки ті, що мають опис або заголовок
+      const validTranslations = translationsData.translations.filter(
+        (t: any) =>
+          (t.data.overview && t.data.overview.trim() !== '') ||
+          (t.data.title && t.data.title.trim() !== '')
+      );
+
+      // Знаходимо найкращий переклад (спочатку українська, потім англійська)
+      let selectedTranslation = validTranslations.find((t: any) => t.iso_639_1 === 'uk');
+      if (!selectedTranslation) {
+        selectedTranslation = validTranslations.find((t: any) => t.iso_639_1 === 'en');
+      }
+      if (!selectedTranslation && validTranslations.length > 0) {
+        selectedTranslation = validTranslations[0];
+      }
+
+      // Функція для отримання перекладеного заголовка
+      const getTitle = () => {
+        if (selectedTranslation?.data?.title) {
+          return selectedTranslation.data.title;
+        }
+        return movie.title || 'Назва відсутня';
+      };
+
+      // Функція для отримання перекладеного опису
+      const getDescription = () => {
+        if (selectedTranslation?.data?.overview) {
+          return selectedTranslation.data.overview;
+        }
+        return movie.overview || 'Опис відсутній';
+      };
+
+      // Перевіряємо, чи фільм переглянутий
+      const watched = isWatched(movie.id);
+
+      return {
+        movie,
+        translations: {
+          selectedTranslation,
+          hasMultipleTranslations: validTranslations.length > 1,
+          getTitle,
+          getDescription
+        },
+        trailer: {
+          hasTrailer
+        },
+        watched
+      };
+    } catch (error) {
+      console.error(`Помилка при завантаженні розширених даних для фільму ${movie.id}:`, error);
+
+      // Повертаємо базові дані, якщо сталася помилка
+      return {
+        movie,
+        translations: null,
+        trailer: null,
+        watched: isWatched(movie.id)
+      };
+    }
+  };
+
+  // Функція для завантаження фільмів з урахуванням фільтрів і їх розширених даних
   const loadMovies = async (count = PRELOAD_MOVIES_COUNT) => {
     try {
       setLoading(true);
       const newMovies = [];
-      
+
       // Завантажуємо задану кількість фільмів
       for (let i = 0; i < count; i++) {
         const movie = await tmdbApi.getRandomMovie({
@@ -195,11 +267,17 @@ export function MovieSwiper() {
         });
         newMovies.push(movie);
       }
-      
-      setMovies(newMovies);
+
+      // Завантажуємо розширені дані для кожного фільму
+      const enhancedMoviesPromises = newMovies.map(movie => loadMovieEnhancements(movie));
+      const loadedEnhancedMovies = await Promise.all(enhancedMoviesPromises);
+
+      // Оновлюємо стан з розширеними фільмами
+      setEnhancedMovies(loadedEnhancedMovies);
       setCurrentIndex(0);
-      console.log(`Завантажено ${newMovies.length} фільмів`);
-      
+
+      console.log(`Завантажено ${loadedEnhancedMovies.length} фільмів з розширеними даними`);
+
     } catch (error) {
       console.error("Помилка при завантаженні фільмів:", error);
       toast.error("Не вдалося завантажити фільми. Спробуйте ще раз.");
@@ -207,15 +285,15 @@ export function MovieSwiper() {
       setLoading(false);
     }
   };
-  
+
   // Функція для додавання фільмів до існуючого масиву
   const loadMoreMovies = async (count = 1) => {
     if (loadingMore) return;
-    
+
     try {
       setLoadingMore(true);
       const newMovies = [];
-      
+
       for (let i = 0; i < count; i++) {
         const movie = await tmdbApi.getRandomMovie({
           minRating: filters.minRating,
@@ -228,11 +306,15 @@ export function MovieSwiper() {
         });
         newMovies.push(movie);
       }
-      
-      // Додаємо новий фільм до масиву
-      setMovies(prev => [...prev, ...newMovies]);
-      console.log(`Додатково завантажено ${count} фільмів`);
-      
+
+      // Завантажуємо розширені дані для кожного фільму
+      const enhancedMoviesPromises = newMovies.map(movie => loadMovieEnhancements(movie));
+      const loadedEnhancedMovies = await Promise.all(enhancedMoviesPromises);
+
+      // Додаємо нові фільми до масиву
+      setEnhancedMovies(prev => [...prev, ...loadedEnhancedMovies]);
+      console.log(`Додатково завантажено ${loadedEnhancedMovies.length} фільмів з розширеними даними`);
+
     } catch (error) {
       console.error("Помилка при завантаженні додаткових фільмів:", error);
     } finally {
@@ -244,123 +326,162 @@ export function MovieSwiper() {
   useEffect(() => {
     loadMovies();
   }, []);
-  
+
   // Довантажуємо фільми, якщо поточний індекс наближається до кінця масиву
   useEffect(() => {
-    if (movies.length > 0 && currentIndex >= movies.length - 2 && !loadingMore) {
+    if (enhancedMovies.length > 0 && currentIndex >= enhancedMovies.length - 2 && !loadingMore) {
       loadMoreMovies(2);
     }
-  }, [currentIndex, movies.length, loadingMore]);
+  }, [currentIndex, enhancedMovies.length, loadingMore]);
+
+  // Отримання поточного фільму та його розширених даних
+  const currentEnhancedMovie = enhancedMovies[currentIndex];
+  // Отримання наступного фільму та його розширених даних
+  const nextEnhancedMovie = enhancedMovies[currentIndex + 1];
 
   // Обробник для кнопки переглянуто/не переглянуто
   const handleToggleWatched = () => {
-    if (!currentMovie) return;
+    if (!currentEnhancedMovie) return;
 
     setIsMarkingWatched(true);
 
+    const movie = currentEnhancedMovie.movie;
     const movieData = {
-      id: currentMovie.id,
-      title: currentMovie.title,
-      poster_path: currentMovie.poster_path,
-      release_date: currentMovie.release_date,
-      overview: currentMovie.overview,
-      vote_average: currentMovie.vote_average,
-      vote_count: safeNumberConversion(currentMovie.vote_count)
+      id: movie.id,
+      title: movie.title,
+      poster_path: movie.poster_path,
+      release_date: movie.release_date,
+      overview: movie.overview,
+      vote_average: movie.vote_average,
+      vote_count: safeNumberConversion(movie.vote_count)
     };
 
-    if (movieWatched) {
+    if (currentEnhancedMovie.watched) {
       // Видаляємо з переглянутих
-      removeFromWatched(currentMovie.id);
-      toast.success(`"${getTitle()}" прибрано з переглянутих фільмів`);
+      removeFromWatched(movie.id);
+      toast.success(`"${currentEnhancedMovie.translations?.getTitle() || movie.title}" прибрано з переглянутих фільмів`);
+
+      // Оновлюємо локальний стан для відображення зміни без перезавантаження
+      setEnhancedMovies(prev => {
+        const updated = [...prev];
+        updated[currentIndex] = {
+          ...updated[currentIndex],
+          watched: false
+        };
+        return updated;
+      });
     } else {
       // Позначаємо як переглянутий
       markAsWatched({ movie: movieData as any });
-      toast.success(`"${getTitle()}" позначено як переглянутий`);
+      toast.success(`"${currentEnhancedMovie.translations?.getTitle() || movie.title}" позначено як переглянутий`);
+
+      // Оновлюємо локальний стан для відображення зміни без перезавантаження
+      setEnhancedMovies(prev => {
+        const updated = [...prev];
+        updated[currentIndex] = {
+          ...updated[currentIndex],
+          watched: true
+        };
+        return updated;
+      });
     }
-    
+
     setIsMarkingWatched(false);
   };
 
   // Функція для переходу до наступного фільму з анімацією
   const moveToNextMovie = (direction: 'left' | 'right') => {
-    if (movies.length <= 1 || currentIndex >= movies.length - 1) {
+    if (enhancedMovies.length <= 1 || currentIndex >= enhancedMovies.length - 1) {
       // Якщо це останній фільм у масиві, перевіряємо чи не завантажуються вже додаткові фільми
       if (!loadingMore) {
         loadMoreMovies();
       }
       return;
     }
-    
-    // Показуємо анімацію виходу для поточної картки
-    const xDirection = direction === 'right' ? 1 : -1;
-    api.start({
-      x: (windowSize.width + 200) * xDirection,
-      rotation: (direction === 'right' ? 15 : -15),
+
+    // Визначаємо, з якого боку буде прилітати наступна картка
+    const incomingSide = direction === 'left' ? 1 : -1; // Звернений напрямок - якщо свайп вліво, нова картка прилітає зправа
+    const outgoingSide = direction === 'left' ? -1 : 1; // Куди летить поточна картка
+
+    // Позиціонуємо наступну картку за межами екрану в потрібному напрямку
+    nextApi.start({
+      x: windowSize.width * incomingSide,
+      rotation: 15 * incomingSide,
+      scale: 1,
+      opacity: 1,
+      immediate: true
+    });
+
+    // Анімуємо вихід поточної картки
+    currentApi.start({
+      x: windowSize.width * outgoingSide,
+      rotation: 15 * outgoingSide,
       config: { tension: 170, friction: 26 }
     });
-    
-    // Показуємо анімацію входу для наступної картки
+
+    // Анімуємо вхід наступної картки
     nextApi.start({
       x: 0,
       rotation: 0,
-      opacity: 1,
+      scale: 1,
       config: { tension: 170, friction: 26 },
       onRest: () => {
         // Коли анімація завершилась, оновлюємо індекс
         setCurrentIndex(prev => prev + 1);
-        
-        // Скидаємо анімацію поточної картки
-        api.start({ x: 0, rotation: 0, scale: 1, immediate: true });
-        
-        // Готуємо наступну картку поза екраном
-        nextApi.start({ 
-          x: direction === 'right' ? -windowSize.width : windowSize.width, 
-          rotation: direction === 'right' ? -15 : 15,
-          opacity: 0,
-          immediate: true
-        });
-        
-        setDirection(null);
+
+        // Скидаємо анімацію для нової поточної картки
+        currentApi.start({ x: 0, rotation: 0, scale: 1, immediate: true });
+
+        // Початкова позиція для наступної картки (якщо вона є)
+        if (currentIndex + 2 < enhancedMovies.length) {
+          nextApi.start({
+            x: windowSize.width,
+            rotation: 15,
+            opacity: 0,
+            immediate: true
+          });
+        }
+
+        // Скидаємо напрямок свайпу
+        setSwipeDirection(null);
       }
     });
   };
 
   // Обробник для кнопки "Дизлайк"
   const handleButtonDislike = () => {
-    setDirection('left');
-    
-    // Якщо використовуємо стек карток
-    if (movies.length > 0) {
+    setSwipeDirection('left');
+    if (enhancedMovies.length > 0) {
       moveToNextMovie('left');
     }
   };
-  
+
   // Обробник для кнопки "Лайк"
   const handleButtonLike = () => {
-    if (!currentMovie || !defaultWatchlist) return;
-    
+    if (!currentEnhancedMovie || !defaultWatchlist) return;
+
     // Додаємо фільм до списку "Невідсортоване"
+    const movie = currentEnhancedMovie.movie;
     const movieData = {
-      id: currentMovie.id,
-      title: currentMovie.title,
-      poster_path: currentMovie.poster_path,
-      release_date: currentMovie.release_date,
-      overview: currentMovie.overview,
-      vote_average: currentMovie.vote_average,
-      vote_count: safeNumberConversion(currentMovie.vote_count)
+      id: movie.id,
+      title: movie.title,
+      poster_path: movie.poster_path,
+      release_date: movie.release_date,
+      overview: movie.overview,
+      vote_average: movie.vote_average,
+      vote_count: safeNumberConversion(movie.vote_count)
     };
-    
+
     addMovie(movieData as any);
-    toast.success(`"${currentMovie.title}" додано до списку "Невідсортоване"`);
-    
-    setDirection('right');
-    
-    // Якщо використовуємо стек карток
-    if (movies.length > 0) {
+    toast.success(`"${currentEnhancedMovie.translations?.getTitle() || movie.title}" додано до списку "${defaultWatchlist.name}"`);
+
+    setSwipeDirection('right');
+
+    if (enhancedMovies.length > 0) {
       moveToNextMovie('right');
     }
   };
-  
+
   // Обробник свайпів з use-gesture
   const bind = useDrag(({ active, movement: [mx], direction: [xDir], velocity: [vx] }) => {
     // Розраховуємо поворот на основі відстані переміщення
@@ -368,11 +489,11 @@ export function MovieSwiper() {
 
     // Показуємо, куди зараз свайпається (лайк/дизлайк)
     if (mx > 50) {
-      setDirection('right');
+      setSwipeDirection('right');
     } else if (mx < -50) {
-      setDirection('left');
+      setSwipeDirection('left');
     } else {
-      setDirection(null);
+      setSwipeDirection(null);
     }
 
     if (!active && Math.abs(mx) > 100) {
@@ -386,11 +507,11 @@ export function MovieSwiper() {
       }
     } else if (!active) {
       // Повертаємо картку на місце, якщо свайп не завершено
-      api.start({ x: 0, rotation: 0, scale: 1 });
-      setDirection(null);
+      currentApi.start({ x: 0, rotation: 0, scale: 1 });
+      setSwipeDirection(null);
     } else {
       // Оновлюємо позицію та поворот картки під час свайпу
-      api.start({
+      currentApi.start({
         x: mx,
         rotation: rot,
         scale: 1.03,
@@ -425,6 +546,12 @@ export function MovieSwiper() {
   const applyFilters = () => {
     setFiltersOpen(false);
     loadMovies();
+  };
+
+  // Обробник для відкриття селектора мов
+  const handleOpenLanguageSelector = () => {
+    if (!currentEnhancedMovie?.translations?.hasMultipleTranslations) return;
+    setIsLanguageSelectorOpen(true);
   };
 
   // Розрахунок оптимальної висоти картки для мобільних пристроїв
@@ -477,7 +604,7 @@ export function MovieSwiper() {
     { code: 'uk', name: 'Українська' }
   ];
 
-  if (loading && movies.length === 0) {
+  if (loading && enhancedMovies.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-screen w-full">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
@@ -486,7 +613,7 @@ export function MovieSwiper() {
     );
   }
 
-  if (!currentMovie) {
+  if (!currentEnhancedMovie) {
     return (
       <div className="flex flex-col items-center justify-center h-screen w-full">
         <p className="text-xl font-semibold mb-4">Не вдалося завантажити фільм</p>
@@ -495,16 +622,16 @@ export function MovieSwiper() {
     );
   }
 
-  // Отримуємо коректне значення vote_count
+  const currentMovie = currentEnhancedMovie.movie;
   const voteCount = safeNumberConversion(currentMovie.vote_count);
-  
-  // Отримуємо наступний фільм, якщо він є
-  const nextMovie = movies[currentIndex + 1] || null;
+  const currentTitle = currentEnhancedMovie.translations?.getTitle() || currentMovie.title;
+  const currentDescription = currentEnhancedMovie.translations?.getDescription() || currentMovie.overview;
+  const hasTrailer = currentEnhancedMovie.trailer?.hasTrailer || false;
 
   return (
     <>
       <div className="fixed inset-0 top-16 flex flex-col items-center">
-        {/* Кнопка фільтрів - перенесена з картки на бокову частину екрану */}
+        {/* Кнопка фільтрів */}
         <div className="fixed top-20 right-4 z-50">
           <Button
             variant="default"
@@ -525,9 +652,9 @@ export function MovieSwiper() {
             <animated.div
               {...bind()}
               style={{
-                x,
-                rotate: rotation,
-                scale,
+                x: currentX,
+                rotate: currentRotation,
+                scale: currentScale,
                 touchAction: 'none',
                 zIndex: 10,
               }}
@@ -539,9 +666,9 @@ export function MovieSwiper() {
                   {currentMovie.poster_path ? (
                     <Image
                       src={`https://image.tmdb.org/t/p/w780${currentMovie.poster_path}`}
-                      alt={getTitle()}
+                      alt={currentTitle}
                       fill
-                      className={`object-cover ${movieWatched ? 'opacity-80' : ''}`}
+                      className={`object-cover ${currentEnhancedMovie.watched ? 'opacity-80' : ''}`}
                       priority
                       sizes="(max-width: 768px) 100vw, 500px"
                     />
@@ -552,7 +679,7 @@ export function MovieSwiper() {
                   )}
 
                   {/* Індикатор переглянутого фільму */}
-                  {movieWatched && (
+                  {currentEnhancedMovie.watched && (
                     <div className="absolute top-4 right-4 bg-blue-500/80 text-white px-3 py-1 rounded-full flex items-center gap-2 z-20">
                       <Eye className="h-4 w-4" />
                       <span>Переглянуто</span>
@@ -560,19 +687,19 @@ export function MovieSwiper() {
                   )}
 
                   {/* Індикатори свайпу */}
-                  {direction === 'right' && (
+                  {swipeDirection === 'right' && (
                     <div className="absolute top-10 right-10 transform rotate-12 border-4 border-green-500 rounded-md px-4 py-2 bg-green-500/30 z-30">
                       <span className="text-white text-xl font-bold">ПОДОБАЄТЬСЯ</span>
                     </div>
                   )}
-                  {direction === 'left' && (
+                  {swipeDirection === 'left' && (
                     <div className="absolute top-10 left-10 transform -rotate-12 border-4 border-red-500 rounded-md px-4 py-2 bg-red-500/30 z-30">
                       <span className="text-white text-xl font-bold">ПРОПУСТИТИ</span>
                     </div>
                   )}
 
                   {/* Оверлей для переглянутих фільмів */}
-                  {movieWatched && (
+                  {currentEnhancedMovie.watched && (
                     <div className="absolute inset-0 flex items-center justify-center bg-blue-500/10 z-10">
                       <div className="bg-blue-500/40 p-4 rounded-full">
                         <Eye className="h-16 w-16 text-white" />
@@ -580,9 +707,9 @@ export function MovieSwiper() {
                     </div>
                   )}
 
-                  {/* Інформація про фільм з більш прозорою підложкою і градієнтним переходом */}
+                  {/* Інформація про фільм з градієнтною підложкою */}
                   <div className="absolute bottom-0 left-0 right-0 z-20">
-                    {/* Градієнтний перехід, який починається вище на постері */}
+                    {/* Градієнтний перехід */}
                     <div className="absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t from-black/100 via-black/90 to-transparent"></div>
 
                     {/* Контент з інформацією */}
@@ -600,26 +727,26 @@ export function MovieSwiper() {
                               {formatYear(currentMovie.release_date)}
                             </Badge>
                           )}
-                          {movieWatched && (
+                          {currentEnhancedMovie.watched && (
                             <Badge variant="secondary" className="bg-blue-500/80 text-white ml-auto">
                               <Eye className="w-3 h-3 mr-1" />
                               Переглянуто
                             </Badge>
                           )}
-                          {selectedTranslation && (
-                            <LanguageIndicator 
-                              selectedTranslation={selectedTranslation} 
-                              onClick={openLanguageSelector} 
-                              size="sm" 
-                              className="bg-black/20 text-white border-none"
-                            />
+                          {currentEnhancedMovie.translations?.selectedTranslation && (
+                            <Badge variant="outline"
+                              className="bg-black/20 text-white border-none ml-auto flex items-center gap-1 cursor-pointer"
+                              onClick={handleOpenLanguageSelector}
+                            >
+                              <span>{currentEnhancedMovie.translations.selectedTranslation.iso_639_1.toUpperCase()}</span>
+                            </Badge>
                           )}
                         </div>
                         <h2 className="text-xl sm:text-2xl font-bold text-white mb-1 drop-shadow-md line-clamp-2">
-                          {getTitle()}
+                          {currentTitle}
                         </h2>
                         <p className="text-white/90 text-xs sm:text-sm line-clamp-2 drop-shadow-md mb-2">
-                          {getDescription()}
+                          {currentDescription}
                         </p>
 
                         {/* Кнопки дій на картці */}
@@ -641,20 +768,15 @@ export function MovieSwiper() {
                               ? 'bg-purple-500 hover:bg-purple-600 text-white'
                               : 'bg-gray-400 text-gray-300 cursor-not-allowed'
                               }`}
-                            disabled={!hasTrailer || isCheckingTrailer}
+                            disabled={!hasTrailer}
                           >
-                            {isCheckingTrailer ? (
-                              <Loader2 className="h-5 w-5 animate-spin" />
-                            ) : (
-                              <Film className="h-5 w-5" />
-                            )}
+                            <Film className="h-5 w-5" />
                           </Button>
 
                           <Button
                             onClick={() => {
-                              if (movieDetails) {
-                                openMovieDetailsModal(movieDetails);
-                              }
+                              // Отримуємо деталі фільму через API і відкриваємо модальне вікно
+                              openMovieDetailsModal(currentMovie as any);
                             }}
                             variant="secondary"
                             size="icon"
@@ -668,13 +790,13 @@ export function MovieSwiper() {
                             onClick={handleToggleWatched}
                             variant="default"
                             size="icon"
-                            className={`rounded-full h-12 w-12 shadow-lg ${movieWatched ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-500 hover:bg-gray-600'
+                            className={`rounded-full h-12 w-12 shadow-lg ${currentEnhancedMovie.watched ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-500 hover:bg-gray-600'
                               }`}
                             disabled={isMarkingWatched}
                           >
                             {isMarkingWatched ? (
                               <Loader2 className="h-5 w-5 animate-spin" />
-                            ) : movieWatched ? (
+                            ) : currentEnhancedMovie.watched ? (
                               <EyeOff className="h-5 w-5" />
                             ) : (
                               <Eye className="h-5 w-5" />
@@ -695,40 +817,163 @@ export function MovieSwiper() {
                   </div>
                 </div>
               </Card>
-            </animated.div>
-            
-            {/* Наступна картка фільму (за межами екрану) */}
-            {nextMovie && (
-              <animated.div
-                style={{
-                  x: nextX,
-                  rotate: nextRotation,
-                  opacity: nextOpacity,
-                  zIndex: 5,
-                }}
-                className="absolute top-0 left-0 w-full h-full will-change-transform"
-              >
-                <Card className="relative w-full h-full overflow-hidden rounded-2xl shadow-xl">
-                  {/* Зображення наступного фільму */}
-                  <div className="absolute inset-0 bg-muted">
-                    {nextMovie.poster_path ? (
-                      <Image
-                        src={`https://image.tmdb.org/t/p/w780${nextMovie.poster_path}`}
-                        alt={nextMovie.title}
-                        fill
-                        className="object-cover"
-                        priority
-                        sizes="(max-width: 768px) 100vw, 500px"
-                      />
-                    ) : (
-                      <div className="flex items-center justify-center h-full">
-                        <p className="text-muted-foreground">Немає зображення</p>
-                      </div>
-                    )}
-                  </div>
-                </Card>
               </animated.div>
-            )}
+              {/* Наступна картка фільму, яка буде прилітати з-за меж екрану */}
+              {nextEnhancedMovie && (
+                <animated.div
+                  style={{
+                    x: nextX,
+                    rotate: nextRotation,
+                    scale: nextScale,
+                    opacity: nextOpacity,
+                    zIndex: 5,
+                  }}
+                  className="absolute top-0 left-0 w-full h-full will-change-transform"
+                >
+                  <Card className="relative w-full h-full overflow-hidden rounded-2xl shadow-xl">
+                    {/* Зображення наступного фільму */}
+                    <div className="absolute inset-0 bg-muted">
+                      {nextEnhancedMovie.movie.poster_path ? (
+                        <Image
+                          src={`https://image.tmdb.org/t/p/w780${nextEnhancedMovie.movie.poster_path}`}
+                          alt={nextEnhancedMovie.translations?.getTitle() || nextEnhancedMovie.movie.title}
+                          fill
+                          className={`object-cover ${nextEnhancedMovie.watched ? 'opacity-80' : ''}`}
+                          priority
+                          sizes="(max-width: 768px) 100vw, 500px"
+                        />
+                      ) : (
+                        <div className="flex items-center justify-center h-full">
+                          <p className="text-muted-foreground">Немає зображення</p>
+                        </div>
+                      )}
+
+                      {/* Індикатор переглянутого фільму */}
+                      {nextEnhancedMovie.watched && (
+                        <div className="absolute top-4 right-4 bg-blue-500/80 text-white px-3 py-1 rounded-full flex items-center gap-2 z-20">
+                          <Eye className="h-4 w-4" />
+                          <span>Переглянуто</span>
+                        </div>
+                      )}
+
+                      {/* Оверлей для переглянутих фільмів */}
+                      {nextEnhancedMovie.watched && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-blue-500/10 z-10">
+                          <div className="bg-blue-500/40 p-4 rounded-full">
+                            <Eye className="h-16 w-16 text-white" />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Інформація про фільм з градієнтною підложкою */}
+                      <div className="absolute bottom-0 left-0 right-0 z-20">
+                        {/* Градієнтний перехід */}
+                        <div className="absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t from-black/100 via-black/90 to-transparent"></div>
+
+                        {/* Контент з інформацією */}
+                        <div className="relative p-3 pb-4">
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {nextEnhancedMovie.movie.vote_average ? (
+                                <Badge variant="secondary" className="bg-yellow-500/80 text-white">
+                                  <Star className="w-3 h-3 mr-1" />
+                                  {nextEnhancedMovie.movie.vote_average.toFixed(1)} ({safeNumberConversion(nextEnhancedMovie.movie.vote_count)})
+                                </Badge>
+                              ) : null}
+                              {nextEnhancedMovie.movie.release_date && (
+                                <Badge variant="outline" className="bg-black/20 text-white border-none">
+                                  {formatYear(nextEnhancedMovie.movie.release_date)}
+                                </Badge>
+                              )}
+                              {nextEnhancedMovie.watched && (
+                                <Badge variant="secondary" className="bg-blue-500/80 text-white ml-auto">
+                                  <Eye className="w-3 h-3 mr-1" />
+                                  Переглянуто
+                                </Badge>
+                              )}
+                              {nextEnhancedMovie.translations?.selectedTranslation && (
+                                <Badge variant="outline" className="bg-black/20 text-white border-none ml-auto flex items-center gap-1">
+                                  <span>{nextEnhancedMovie.translations.selectedTranslation.iso_639_1.toUpperCase()}</span>
+                                </Badge>
+                              )}
+                            </div>
+                            <h2 className="text-xl sm:text-2xl font-bold text-white mb-1 drop-shadow-md line-clamp-2">
+                              {nextEnhancedMovie.translations?.getTitle() || nextEnhancedMovie.movie.title}
+                            </h2>
+                            <p className="text-white/90 text-xs sm:text-sm line-clamp-2 drop-shadow-md mb-2">
+                              {nextEnhancedMovie.translations?.getDescription() || nextEnhancedMovie.movie.overview}
+                            </p>
+
+{/* Кнопки дій на картці */}
+<div className="flex justify-between pt-2">
+                          <Button
+                            onClick={handleButtonDislike}
+                            variant="destructive"
+                            size="icon"
+                            className="rounded-full h-12 w-12 shadow-lg"
+                          >
+                            <ThumbsDown className="h-5 w-5" />
+                          </Button>
+
+                          <Button
+                            onClick={() => hasTrailer && setTrailerOpen(true)}
+                            variant="secondary"
+                            size="icon"
+                            className={`rounded-full h-12 w-12 shadow-lg ${hasTrailer
+                              ? 'bg-purple-500 hover:bg-purple-600 text-white'
+                              : 'bg-gray-400 text-gray-300 cursor-not-allowed'
+                              }`}
+                            disabled={!hasTrailer}
+                          >
+                            <Film className="h-5 w-5" />
+                          </Button>
+
+                          <Button
+                            onClick={() => {
+                              // Отримуємо деталі фільму через API і відкриваємо модальне вікно
+                              openMovieDetailsModal(currentMovie as any);
+                            }}
+                            variant="secondary"
+                            size="icon"
+                            className="rounded-full h-12 w-12 bg-white text-gray-800 shadow-lg"
+                          >
+                            <Info className="h-5 w-5" />
+                          </Button>
+
+                          {/* Кнопка переглянуто/не переглянуто */}
+                          <Button
+                            onClick={handleToggleWatched}
+                            variant="default"
+                            size="icon"
+                            className={`rounded-full h-12 w-12 shadow-lg ${currentEnhancedMovie.watched ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-500 hover:bg-gray-600'
+                              }`}
+                            disabled={isMarkingWatched}
+                          >
+                            {isMarkingWatched ? (
+                              <Loader2 className="h-5 w-5 animate-spin" />
+                            ) : currentEnhancedMovie.watched ? (
+                              <EyeOff className="h-5 w-5" />
+                            ) : (
+                              <Eye className="h-5 w-5" />
+                            )}
+                          </Button>
+
+                          <Button
+                            onClick={handleButtonLike}
+                            variant="default"
+                            size="icon"
+                            className="rounded-full h-12 w-12 bg-green-500 hover:bg-green-600 shadow-lg"
+                          >
+                            <ThumbsUp className="h-5 w-5" />
+                          </Button>
+                        </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                </animated.div>
+              )}
           </div>
 
           <div className="text-center my-2 text-xs md:text-sm text-muted-foreground px-4">
@@ -737,5 +982,5 @@ export function MovieSwiper() {
         </div>
       </div>
       </>
-  )
-};
+      );
+    };
