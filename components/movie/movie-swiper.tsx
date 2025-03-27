@@ -752,7 +752,7 @@ export function MovieSwiper() {
                         </p>
 
                         {/* Кнопки дій на картці */}
-                        <div className="flex justify-between pt-2">
+                        <div className={`flex justify-between pt-2 transition-opacity duration-300 ${swipeDirection ? 'opacity-0' : 'opacity-100'}`}>
                           <Button
                             onClick={handleButtonDislike}
                             variant="destructive"
@@ -907,7 +907,7 @@ export function MovieSwiper() {
                           </p>
 
                           {/* Кнопки дій на картці */}
-                          <div className="flex justify-between pt-2">
+                          <div className="flex justify-between pt-2 opacity-0 transition-opacity duration-300">
                             <Button
                               onClick={handleButtonDislike}
                               variant="destructive"
@@ -984,7 +984,7 @@ export function MovieSwiper() {
         </div>
       </div>
 
-            {/* Панель фільтрів */}
+      {/* Панель фільтрів */}
       <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
         <SheetContent className="p-0 sm:max-w-md">
           <div className="h-full flex flex-col">
