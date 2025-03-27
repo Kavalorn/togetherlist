@@ -102,6 +102,8 @@ export function MovieSwiper() {
   const defaultWatchlist = getDefaultWatchlist();
   const { addMovie } = useWatchlistDetails(defaultWatchlist?.id || null);
 
+  const animationWidth = windowSize.width * 1.2;
+
   // Стан для поточної та наступної картки (яка прилітає з-за меж екрану)
   const [{ x: currentX, rotation: currentRotation, scale: currentScale }, currentApi] = useSpring(() => ({
     x: 0,
@@ -112,7 +114,7 @@ export function MovieSwiper() {
 
   // Стан для наступної картки (яка прилітає з-за меж екрану)
   const [{ x: nextX, rotation: nextRotation, scale: nextScale, opacity: nextOpacity }, nextApi] = useSpring(() => ({
-    x: windowSize.width, // Починаємо за межами екрану
+    x: animationWidth, // Починаємо за межами екрану
     rotation: 15,        // Початковий скос для наступної картки
     scale: 1,
     opacity: 0,          // Початково невидима
@@ -405,7 +407,7 @@ export function MovieSwiper() {
 
     // Позиціонуємо наступну картку за межами екрану в потрібному напрямку
     nextApi.start({
-      x: windowSize.width * incomingSide,
+      x: animationWidth * incomingSide,
       rotation: 15 * incomingSide,
       scale: 1,
       opacity: 1,
@@ -414,7 +416,7 @@ export function MovieSwiper() {
 
     // Анімуємо вихід поточної картки
     currentApi.start({
-      x: windowSize.width * outgoingSide,
+      x: animationWidth * outgoingSide,
       rotation: 15 * outgoingSide,
       config: { tension: 170, friction: 26 }
     });
@@ -435,7 +437,7 @@ export function MovieSwiper() {
         // Початкова позиція для наступної картки (якщо вона є)
         if (currentIndex + 2 < enhancedMovies.length) {
           nextApi.start({
-            x: windowSize.width,
+            x: animationWidth,
             rotation: 15,
             opacity: 0,
             immediate: true
@@ -557,7 +559,7 @@ export function MovieSwiper() {
   // Розрахунок оптимальної висоти картки для мобільних пристроїв
   const calculateCardHeight = () => {
     // Для мобільних пристроїв - максимально використовуємо простір
-    if (windowSize.width <= 768) {
+    if (animationWidth <= 768) {
       // Віднімаємо висоту хедера (64px) і відступ для нижнього тексту (40px)
       return windowSize.height - 104;
     }
@@ -817,163 +819,163 @@ export function MovieSwiper() {
                   </div>
                 </div>
               </Card>
-              </animated.div>
-              {/* Наступна картка фільму, яка буде прилітати з-за меж екрану */}
-              {nextEnhancedMovie && (
-                <animated.div
-                  style={{
-                    x: nextX,
-                    rotate: nextRotation,
-                    scale: nextScale,
-                    opacity: nextOpacity,
-                    zIndex: 5,
-                  }}
-                  className="absolute top-0 left-0 w-full h-full will-change-transform"
-                >
-                  <Card className="relative w-full h-full overflow-hidden rounded-2xl shadow-xl">
-                    {/* Зображення наступного фільму */}
-                    <div className="absolute inset-0 bg-muted">
-                      {nextEnhancedMovie.movie.poster_path ? (
-                        <Image
-                          src={`https://image.tmdb.org/t/p/w780${nextEnhancedMovie.movie.poster_path}`}
-                          alt={nextEnhancedMovie.translations?.getTitle() || nextEnhancedMovie.movie.title}
-                          fill
-                          className={`object-cover ${nextEnhancedMovie.watched ? 'opacity-80' : ''}`}
-                          priority
-                          sizes="(max-width: 768px) 100vw, 500px"
-                        />
-                      ) : (
-                        <div className="flex items-center justify-center h-full">
-                          <p className="text-muted-foreground">Немає зображення</p>
+            </animated.div>
+            {/* Наступна картка фільму, яка буде прилітати з-за меж екрану */}
+            {nextEnhancedMovie && (
+              <animated.div
+                style={{
+                  x: nextX,
+                  rotate: nextRotation,
+                  scale: nextScale,
+                  opacity: nextOpacity,
+                  zIndex: 5,
+                }}
+                className="absolute top-0 left-0 w-full h-full will-change-transform"
+              >
+                <Card className="relative w-full h-full overflow-hidden rounded-2xl shadow-xl">
+                  {/* Зображення наступного фільму */}
+                  <div className="absolute inset-0 bg-muted">
+                    {nextEnhancedMovie.movie.poster_path ? (
+                      <Image
+                        src={`https://image.tmdb.org/t/p/w780${nextEnhancedMovie.movie.poster_path}`}
+                        alt={nextEnhancedMovie.translations?.getTitle() || nextEnhancedMovie.movie.title}
+                        fill
+                        className={`object-cover ${nextEnhancedMovie.watched ? 'opacity-80' : ''}`}
+                        priority
+                        sizes="(max-width: 768px) 100vw, 500px"
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center h-full">
+                        <p className="text-muted-foreground">Немає зображення</p>
+                      </div>
+                    )}
+
+                    {/* Індикатор переглянутого фільму */}
+                    {nextEnhancedMovie.watched && (
+                      <div className="absolute top-4 right-4 bg-blue-500/80 text-white px-3 py-1 rounded-full flex items-center gap-2 z-20">
+                        <Eye className="h-4 w-4" />
+                        <span>Переглянуто</span>
+                      </div>
+                    )}
+
+                    {/* Оверлей для переглянутих фільмів */}
+                    {nextEnhancedMovie.watched && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-blue-500/10 z-10">
+                        <div className="bg-blue-500/40 p-4 rounded-full">
+                          <Eye className="h-16 w-16 text-white" />
                         </div>
-                      )}
+                      </div>
+                    )}
 
-                      {/* Індикатор переглянутого фільму */}
-                      {nextEnhancedMovie.watched && (
-                        <div className="absolute top-4 right-4 bg-blue-500/80 text-white px-3 py-1 rounded-full flex items-center gap-2 z-20">
-                          <Eye className="h-4 w-4" />
-                          <span>Переглянуто</span>
-                        </div>
-                      )}
+                    {/* Інформація про фільм з градієнтною підложкою */}
+                    <div className="absolute bottom-0 left-0 right-0 z-20">
+                      {/* Градієнтний перехід */}
+                      <div className="absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t from-black/100 via-black/90 to-transparent"></div>
 
-                      {/* Оверлей для переглянутих фільмів */}
-                      {nextEnhancedMovie.watched && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-blue-500/10 z-10">
-                          <div className="bg-blue-500/40 p-4 rounded-full">
-                            <Eye className="h-16 w-16 text-white" />
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Інформація про фільм з градієнтною підложкою */}
-                      <div className="absolute bottom-0 left-0 right-0 z-20">
-                        {/* Градієнтний перехід */}
-                        <div className="absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t from-black/100 via-black/90 to-transparent"></div>
-
-                        {/* Контент з інформацією */}
-                        <div className="relative p-3 pb-4">
-                          <div className="flex flex-col gap-1">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              {nextEnhancedMovie.movie.vote_average ? (
-                                <Badge variant="secondary" className="bg-yellow-500/80 text-white">
-                                  <Star className="w-3 h-3 mr-1" />
-                                  {nextEnhancedMovie.movie.vote_average.toFixed(1)} ({safeNumberConversion(nextEnhancedMovie.movie.vote_count)})
-                                </Badge>
-                              ) : null}
-                              {nextEnhancedMovie.movie.release_date && (
-                                <Badge variant="outline" className="bg-black/20 text-white border-none">
-                                  {formatYear(nextEnhancedMovie.movie.release_date)}
-                                </Badge>
-                              )}
-                              {nextEnhancedMovie.watched && (
-                                <Badge variant="secondary" className="bg-blue-500/80 text-white ml-auto">
-                                  <Eye className="w-3 h-3 mr-1" />
-                                  Переглянуто
-                                </Badge>
-                              )}
-                              {nextEnhancedMovie.translations?.selectedTranslation && (
-                                <Badge variant="outline" className="bg-black/20 text-white border-none ml-auto flex items-center gap-1">
-                                  <span>{nextEnhancedMovie.translations.selectedTranslation.iso_639_1.toUpperCase()}</span>
-                                </Badge>
-                              )}
-                            </div>
-                            <h2 className="text-xl sm:text-2xl font-bold text-white mb-1 drop-shadow-md line-clamp-2">
-                              {nextEnhancedMovie.translations?.getTitle() || nextEnhancedMovie.movie.title}
-                            </h2>
-                            <p className="text-white/90 text-xs sm:text-sm line-clamp-2 drop-shadow-md mb-2">
-                              {nextEnhancedMovie.translations?.getDescription() || nextEnhancedMovie.movie.overview}
-                            </p>
-
-{/* Кнопки дій на картці */}
-<div className="flex justify-between pt-2">
-                          <Button
-                            onClick={handleButtonDislike}
-                            variant="destructive"
-                            size="icon"
-                            className="rounded-full h-12 w-12 shadow-lg"
-                          >
-                            <ThumbsDown className="h-5 w-5" />
-                          </Button>
-
-                          <Button
-                            onClick={() => hasTrailer && setTrailerOpen(true)}
-                            variant="secondary"
-                            size="icon"
-                            className={`rounded-full h-12 w-12 shadow-lg ${hasTrailer
-                              ? 'bg-purple-500 hover:bg-purple-600 text-white'
-                              : 'bg-gray-400 text-gray-300 cursor-not-allowed'
-                              }`}
-                            disabled={!hasTrailer}
-                          >
-                            <Film className="h-5 w-5" />
-                          </Button>
-
-                          <Button
-                            onClick={() => {
-                              // Отримуємо деталі фільму через API і відкриваємо модальне вікно
-                              openMovieDetailsModal(currentMovie as any);
-                            }}
-                            variant="secondary"
-                            size="icon"
-                            className="rounded-full h-12 w-12 bg-white text-gray-800 shadow-lg"
-                          >
-                            <Info className="h-5 w-5" />
-                          </Button>
-
-                          {/* Кнопка переглянуто/не переглянуто */}
-                          <Button
-                            onClick={handleToggleWatched}
-                            variant="default"
-                            size="icon"
-                            className={`rounded-full h-12 w-12 shadow-lg ${currentEnhancedMovie.watched ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-500 hover:bg-gray-600'
-                              }`}
-                            disabled={isMarkingWatched}
-                          >
-                            {isMarkingWatched ? (
-                              <Loader2 className="h-5 w-5 animate-spin" />
-                            ) : currentEnhancedMovie.watched ? (
-                              <EyeOff className="h-5 w-5" />
-                            ) : (
-                              <Eye className="h-5 w-5" />
+                      {/* Контент з інформацією */}
+                      <div className="relative p-3 pb-4">
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {nextEnhancedMovie.movie.vote_average ? (
+                              <Badge variant="secondary" className="bg-yellow-500/80 text-white">
+                                <Star className="w-3 h-3 mr-1" />
+                                {nextEnhancedMovie.movie.vote_average.toFixed(1)} ({safeNumberConversion(nextEnhancedMovie.movie.vote_count)})
+                              </Badge>
+                            ) : null}
+                            {nextEnhancedMovie.movie.release_date && (
+                              <Badge variant="outline" className="bg-black/20 text-white border-none">
+                                {formatYear(nextEnhancedMovie.movie.release_date)}
+                              </Badge>
                             )}
-                          </Button>
+                            {nextEnhancedMovie.watched && (
+                              <Badge variant="secondary" className="bg-blue-500/80 text-white ml-auto">
+                                <Eye className="w-3 h-3 mr-1" />
+                                Переглянуто
+                              </Badge>
+                            )}
+                            {nextEnhancedMovie.translations?.selectedTranslation && (
+                              <Badge variant="outline" className="bg-black/20 text-white border-none ml-auto flex items-center gap-1">
+                                <span>{nextEnhancedMovie.translations.selectedTranslation.iso_639_1.toUpperCase()}</span>
+                              </Badge>
+                            )}
+                          </div>
+                          <h2 className="text-xl sm:text-2xl font-bold text-white mb-1 drop-shadow-md line-clamp-2">
+                            {nextEnhancedMovie.translations?.getTitle() || nextEnhancedMovie.movie.title}
+                          </h2>
+                          <p className="text-white/90 text-xs sm:text-sm line-clamp-2 drop-shadow-md mb-2">
+                            {nextEnhancedMovie.translations?.getDescription() || nextEnhancedMovie.movie.overview}
+                          </p>
 
-                          <Button
-                            onClick={handleButtonLike}
-                            variant="default"
-                            size="icon"
-                            className="rounded-full h-12 w-12 bg-green-500 hover:bg-green-600 shadow-lg"
-                          >
-                            <ThumbsUp className="h-5 w-5" />
-                          </Button>
-                        </div>
+                          {/* Кнопки дій на картці */}
+                          <div className="flex justify-between pt-2">
+                            <Button
+                              onClick={handleButtonDislike}
+                              variant="destructive"
+                              size="icon"
+                              className="rounded-full h-12 w-12 shadow-lg"
+                            >
+                              <ThumbsDown className="h-5 w-5" />
+                            </Button>
+
+                            <Button
+                              onClick={() => hasTrailer && setTrailerOpen(true)}
+                              variant="secondary"
+                              size="icon"
+                              className={`rounded-full h-12 w-12 shadow-lg ${hasTrailer
+                                ? 'bg-purple-500 hover:bg-purple-600 text-white'
+                                : 'bg-gray-400 text-gray-300 cursor-not-allowed'
+                                }`}
+                              disabled={!hasTrailer}
+                            >
+                              <Film className="h-5 w-5" />
+                            </Button>
+
+                            <Button
+                              onClick={() => {
+                                // Отримуємо деталі фільму через API і відкриваємо модальне вікно
+                                openMovieDetailsModal(currentMovie as any);
+                              }}
+                              variant="secondary"
+                              size="icon"
+                              className="rounded-full h-12 w-12 bg-white text-gray-800 shadow-lg"
+                            >
+                              <Info className="h-5 w-5" />
+                            </Button>
+
+                            {/* Кнопка переглянуто/не переглянуто */}
+                            <Button
+                              onClick={handleToggleWatched}
+                              variant="default"
+                              size="icon"
+                              className={`rounded-full h-12 w-12 shadow-lg ${currentEnhancedMovie.watched ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-500 hover:bg-gray-600'
+                                }`}
+                              disabled={isMarkingWatched}
+                            >
+                              {isMarkingWatched ? (
+                                <Loader2 className="h-5 w-5 animate-spin" />
+                              ) : currentEnhancedMovie.watched ? (
+                                <EyeOff className="h-5 w-5" />
+                              ) : (
+                                <Eye className="h-5 w-5" />
+                              )}
+                            </Button>
+
+                            <Button
+                              onClick={handleButtonLike}
+                              variant="default"
+                              size="icon"
+                              className="rounded-full h-12 w-12 bg-green-500 hover:bg-green-600 shadow-lg"
+                            >
+                              <ThumbsUp className="h-5 w-5" />
+                            </Button>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </Card>
-                </animated.div>
-              )}
+                  </div>
+                </Card>
+              </animated.div>
+            )}
           </div>
 
           <div className="text-center my-2 text-xs md:text-sm text-muted-foreground px-4">
@@ -981,6 +983,6 @@ export function MovieSwiper() {
           </div>
         </div>
       </div>
-      </>
-      );
-    };
+    </>
+  );
+};
