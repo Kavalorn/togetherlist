@@ -34,6 +34,7 @@ import { useMovieTranslations } from '@/hooks/use-movie-translations';
 import { LanguageSelector } from './language-selector';
 import { Globe } from 'lucide-react';
 import { LanguageIndicator } from '@/components/movie/language-indicator';
+import { useWatchlistDetails, useWatchlists } from '@/hooks/use-watchlists';
 
 // Функція для безпечного перетворення значення на число
 function safeNumberConversion(value: any): number {
@@ -68,7 +69,8 @@ export function MovieSwiper() {
   const [loading, setLoading] = useState(true);
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
   const [direction, setDirection] = useState<'left' | 'right' | null>(null);
-  const { isWatched, markAsWatched, removeFromWatched, isMarking, isRemoving } = useWatchedMovies();
+  const { isWatched, markAsWatched, removeFromWatched } = useWatchedMovies();
+  const { watchlists } = useWatchlists();
   const { openMovieDetailsModal } = useUIStore();
   const containerRef = useRef<HTMLDivElement>(null);
   const [gone, setGone] = useState(false);
@@ -126,14 +128,6 @@ export function MovieSwiper() {
 
   // Перевіряємо чи фільм переглянуто
   const movieWatched = isWatched(currentMovie?.id || 0);
-
-  // Відстежуємо зміни статусу перегляду
-  useEffect(() => {
-    if (currentMovie) {
-      const isWatchedStatus = isWatched(currentMovie.id);
-      console.log(`Фільм ${currentMovie.title} переглянуто: ${isWatchedStatus}`);
-    }
-  }, [currentMovie, isWatched]);
 
   // Оновлюємо розмір вікна при завантаженні та зміні розміру
   useEffect(() => {
@@ -234,6 +228,26 @@ export function MovieSwiper() {
     }
   };
 
+    // Обробник для кнопки "Дизлайк"
+    const handleButtonDislike = () => {
+      // Імітуємо анімацію свайпу вліво
+      api.start({
+        x: -(200 + windowSize.width),
+        rotation: -15,
+        config: { friction: 50, tension: 200 }
+      });
+    
+      setDirection('left');
+      setGone(true);
+    
+      setTimeout(() => {
+        setGone(false);
+        api.start({ x: 0, y: 0, rotation: 0, scale: 1 });
+        loadRandomMovie(); // Завантажуємо новий випадковий фільм
+        setDirection(null);
+      }, 300);
+    };
+
   // Налаштування анімації з react-spring
   const [props, api] = useSpring(() => ({
     x: 0,
@@ -270,9 +284,10 @@ export function MovieSwiper() {
 
       if (mx > 0) {
         // Свайп вправо (лайк)
+        handleButtonLike();
       } else {
         // Свайп вліво (дизлайк)
-        handleDislike();
+        handleButtonDislike();
       }
 
       // Затримка перед показом наступної картки
@@ -300,23 +315,44 @@ export function MovieSwiper() {
     axis: 'x'
   });
 
-  // Обробник для кнопки "Дизлайк"
-  const handleDislike = () => {
-    // При дизлайку просто переходимо до наступного фільму
-  };
+  const { getDefaultWatchlist } = useWatchlists();
+  const defaultWatchlist = getDefaultWatchlist();
+  const { addMovie } = useWatchlistDetails(defaultWatchlist?.id || null);
 
-  // Обробка кнопок лайк/дизлайк
+  // Обробник для кнопки лайку
   const handleButtonLike = () => {
+    if (!currentMovie || !defaultWatchlist) return;
+  
+    const movieData = {
+      id: currentMovie.id,
+      title: currentMovie.title,
+      poster_path: currentMovie.poster_path,
+      release_date: currentMovie.release_date,
+      overview: currentMovie.overview,
+      vote_average: currentMovie.vote_average,
+      vote_count: safeNumberConversion(currentMovie.vote_count)
+    };
+  
+    // Додаємо фільм до дефолтного списку
+    addMovie(movieData, {
+      onSuccess: () => {
+        toast.success(`"${currentMovie.title}" додано до списку "Невідсортоване"`);
+      },
+      onError: (error) => {
+        toast.error(`Помилка: ${error.message}`);
+      }
+    });
+  
     // Імітуємо анімацію свайпу вправо
     api.start({
       x: (200 + windowSize.width),
       rotation: 15,
       config: { friction: 50, tension: 200 }
     });
-
+  
     setDirection('right');
     setGone(true);
-
+  
     setTimeout(() => {
       setGone(false);
       api.start({ x: 0, y: 0, rotation: 0, scale: 1 });
@@ -324,27 +360,7 @@ export function MovieSwiper() {
       setDirection(null);
     }, 300);
   };
-
-  const handleButtonDislike = () => {
-    // Імітуємо анімацію свайпу вліво
-    api.start({
-      x: -(200 + windowSize.width),
-      rotation: -15,
-      config: { friction: 50, tension: 200 }
-    });
-
-    setDirection('left');
-    setGone(true);
-    handleDislike();
-
-    setTimeout(() => {
-      setGone(false);
-      api.start({ x: 0, y: 0, rotation: 0, scale: 1 });
-      loadRandomMovie(); // Завантажуємо новий випадковий фільм
-      setDirection(null);
-    }, 300);
-  };
-
+  
   // Скидання фільтрів до значень за замовчуванням
   const resetFilters = () => {
     const defaultFilters = {
