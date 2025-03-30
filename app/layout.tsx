@@ -11,16 +11,17 @@ import { ActorDetailsModal } from '@/components/actor/actor-details-modal';
 const inter = Inter({ subsets: ['latin', 'cyrillic'], variable: '--font-sans' });
 
 export const metadata = {
-  title: 'WatchPick - Список перегляду фільмів',
-  description: 'Додаток для пошуку фільмів та створення списку перегляду',
+  title: 'WatchPick - Social entertainment platform',
+  description: 'WatchPick is a social entertainment platform that allows users to find movies, create watchlists, and share their experiences with friends.',
+  keywords: 'movies, watchlist, social entertainment, film recommendations, movie reviews',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
     title: 'WatchPick'
   },
   icons: {
-    icon: '/favicon.ico',
-    apple: '/icons/apple-touch-icon.png',
+    icon: '/logo-full-black.svg',
+    apple: 'logo-full-black.svg',
   },
   themeColor: '#3b82f6', // Синій колір для теми
   viewport: 'width=device-width, initial-scale=1, maximum-scale=1',

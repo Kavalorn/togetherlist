@@ -38,14 +38,22 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { useWatchlists } from '@/hooks/use-watchlists';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { ThemeProvider, useTheme } from 'next-themes';
 
 export function MainNav() {
   const pathname = usePathname();
+  const { resolvedTheme } = useTheme()
   const { user, logout } = useAuthStore();
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [signupModalOpen, setSignupModalOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { watchlists, isLoading: isLoadingWatchlists } = useWatchlists();
+  const [mounted, setMounted] = useState(false)
+
+  // avoiding hydration problems with next-themes
+  useEffect(() => {
+    setMounted(true)
+  }, [])
   
   // Ініціали користувача для аватара
   const userInitials = user?.email
@@ -57,6 +65,8 @@ export function MainNav() {
     setMobileMenuOpen(false);
   }, [pathname]);
   
+  if (!mounted) return null
+
   // Основні навігаційні елементи
   const mainNavItems = [
     {
@@ -106,7 +116,11 @@ export function MainNav() {
       <div className="border-b">
         <div className="flex h-16 items-center px-4">
           <Link href="/" className="flex items-center text-xl font-bold">
-            <Film className="mr-2 h-6 w-6" />
+          {resolvedTheme === 'dark' ? (
+            <img src="/logo-full-white.svg" alt="Logo" className="h-10 w-10 mr-2" />
+          ) : (
+            <img src="/logo-full-black.svg" alt="Logo" className="h-10 w-10 mr-2" />
+          )}
             <span className="hidden sm:inline">WatchPick</span>
           </Link>
           

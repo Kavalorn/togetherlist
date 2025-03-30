@@ -10,7 +10,7 @@ export default function Head() {
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="WatchPick" />
-        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+        <link rel="apple-touch-icon" href="logo-full-black.svg" />
         
         {/* Іконка для Android */}
         <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
