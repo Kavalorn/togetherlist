@@ -12,6 +12,7 @@ import { useFavoriteActors } from '@/hooks/use-favorite-actors';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
+import Link from 'next/link';
 
 type ActorCardProps = { 
   actor: Person | Cast; 
@@ -280,12 +281,14 @@ export function ActorCard({ actor, variant = 'default', imageOnly, onCardClick =
         {actor.known_for && Array.isArray(actor.known_for) && actor.known_for.length > 0 && (
           <div className="my-2">
             <p className="text-sm text-muted-foreground mb-1">Відомий за:</p>
-            <div className="flex flex-wrap gap-1">
+            <div className="flex flex-wrap gap-1" onClick={e => e.stopPropagation()}>
               {actor.known_for.slice(0, 3).map((work: any) => (
-                <Badge key={work.id} variant="outline" className="flex items-center gap-1">
-                  <Film className="h-3 w-3" />
-                  {work.title || work.name || 'Невідомо'}
-                </Badge>
+                <Link href={`/movie/${work.id}`}>
+                  <Badge key={work.id} variant="outline" className="flex items-center gap-1 hover:bg-slate-600 transition-colors">
+                    <Film className="h-3 w-3" />
+                    {work.title || work.name || 'Невідомо'}
+                  </Badge>
+                </Link>
               ))}
             </div>
           </div>
