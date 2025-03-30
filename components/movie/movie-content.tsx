@@ -27,8 +27,9 @@ import { MovieProviders } from './movie-providers';
 import { MovieRecommendations } from './movie-recommendations';
 import { ShareButtons } from './share-buttons';
 import { useRouter } from 'next/navigation';
-import { Movie, MovieDetails } from '@/lib/tmdb';
+import { Cast, Movie, MovieDetails } from '@/lib/tmdb';
 import { useUIStore } from '@/store/ui-store';
+import { ActorCard } from '../actor/actor-card';
 
 // Функция для безопасного преобразования значения в число
 function safeNumberConversion(value: any): number {
@@ -412,36 +413,10 @@ export function MovieContent({ movie, isModal = false }: MovieContentProps) {
                 </div>
               ) : creditsData?.cast && creditsData.cast.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 pr-0 sm:pr-4">
-                  {creditsData.cast.slice(0, 20).map((actor: any) => (
-                    <div
-                      key={actor.id}
-                      className="rounded-md overflow-hidden border cursor-pointer hover:shadow-md transition-shadow"
-                      onClick={() => {
-                        // Закрываем модальное окно, если мы в модальном режиме
-                        if (isModal && closeMovieDetailsModal) {
-                          closeMovieDetailsModal();
-                        }
-                        
-                        // Переходим на страницу актера
-                        router.push(`/actor/${actor.id}`);
-                      }}
-                    >
-                      <div className="relative aspect-[2/3] w-full">
-                        <Image
-                          src={actor.profile_path
-                            ? `https://image.tmdb.org/t/p/w342${actor.profile_path}`
-                            : '/placeholder-person.png'}
-                          alt={actor.name}
-                          fill
-                          className="object-cover"
-                          sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
-                        />
-                      </div>
-                      <div className="p-2">
-                        <p className="font-medium text-sm">{actor.name}</p>
-                        <p className="text-xs text-muted-foreground">{actor.character}</p>
-                      </div>
-                    </div>
+                  {creditsData.cast.map((actor: Cast) => (
+                    <ActorCard key={actor.id} actor={actor} variant='cast' onCardClick={() => {
+                      if (isModal) closeMovieDetailsModal();
+                    }} />
                   ))}
                 </div>
               ) : (

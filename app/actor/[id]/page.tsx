@@ -20,6 +20,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel
 } from '@/components/ui/dropdown-menu';
+import { ActorCard } from '@/components/actor/actor-card';
+import { Person } from '@/lib/tmdb';
 
 export default function ActorPage() {
   return (
@@ -188,21 +190,7 @@ function ActorContent() {
       
       <div className="flex flex-col md:flex-row gap-6 sm:gap-8">
         <div className="w-full md:w-1/4">
-          <div className="relative aspect-[2/3] w-full max-w-[200px] mx-auto md:mx-0 rounded-lg overflow-hidden shadow-md border">
-            {personDetails.profile_path ? (
-              <Image
-                src={`https://image.tmdb.org/t/p/w500${personDetails.profile_path}`}
-                alt={personDetails.name}
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 200px, 25vw"
-              />
-            ) : (
-              <div className="absolute inset-0 flex justify-center items-center bg-muted">
-                <span className="text-muted-foreground">Фото відсутнє</span>
-              </div>
-            )}
-          </div>
+          <ActorCard actor={personDetails as Person} imageOnly variant='cast'  />
           
           <div className="mt-6 space-y-4">
             <h2 className="text-lg font-semibold">Персональна інформація</h2>

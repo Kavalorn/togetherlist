@@ -7,18 +7,20 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Heart, Film, Star, Info, Loader2 } from 'lucide-react';
-import { Person } from '@/lib/tmdb';
+import { Cast, Person } from '@/lib/tmdb';
 import { useFavoriteActors } from '@/hooks/use-favorite-actors';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 
-interface ActorCardProps {
-  actor: Person;
-  variant?: 'default' | 'compact';
-}
+type ActorCardProps = { 
+  actor: Person | Cast; 
+  variant?: 'default' | 'compact' | 'cast',
+  imageOnly?: boolean,
+  onCardClick?: () => void
+};
 
-export function ActorCard({ actor, variant = 'default' }: ActorCardProps) {
+export function ActorCard({ actor, variant = 'default', imageOnly, onCardClick = () => {} }: ActorCardProps) {
   const router = useRouter();
   const { isInFavorites, toggleFavorite, isAddingToFavorites, isRemovingFromFavorites } = useFavoriteActors();
   const [imageError, setImageError] = useState(false);
@@ -29,6 +31,7 @@ export function ActorCard({ actor, variant = 'default' }: ActorCardProps) {
 
   // Обробник натискання на картку (перехід на сторінку актора)
   const handleCardClick = () => {
+    onCardClick();
     router.push(`/actor/${actor.id}`);
   };
   
@@ -69,11 +72,78 @@ export function ActorCard({ actor, variant = 'default' }: ActorCardProps) {
     setImageLoading(false);
   };
 
+  // cast item from details
+  if (variant === 'cast') {
+    const castActor = actor as Cast;
+
+    return (
+      <Card 
+        className="overflow-hidden hover:shadow-md transition-shadow duration-200 cursor-pointer p-0 gap-0"
+        onClick={handleCardClick}
+      >
+        <div className="relative aspect-[2/3] w-full bg-slate-800">
+          {/* Loading skeleton */}
+          {imageLoading && (
+            <div className="absolute inset-0 bg-slate-800 animate-pulse flex items-center justify-center">
+              <Loader2 className="h-8 w-8 text-gray-500 animate-spin" />
+            </div>
+          )}
+          
+          <Image
+            src={castActor.profile_path ? `https://image.tmdb.org/t/p/w342${castActor.profile_path}` : '/placeholder-person.png'}
+            alt={castActor.name}
+            fill
+            className={`object-cover transition-opacity duration-300 ${imageLoading ? 'opacity-0' : 'opacity-100'}`}
+            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+            onError={() => {
+              setImageError(true);
+              setImageLoading(false);
+            }}
+            onLoad={handleImageLoad}
+            priority={variant === 'cast'}
+          />
+          
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={`absolute top-2 right-2 p-1.5 rounded-full ${
+                    isFavorite 
+                      ? 'bg-red-500 hover:bg-red-600 text-white' 
+                      : 'bg-white/80 hover:bg-white text-gray-600 hover:text-gray-800'
+                  }`}
+                  onClick={handleToggleFavorite}
+                  disabled={isAddingToFavorites || isRemovingFromFavorites}
+                >
+                  {isAddingToFavorites || isRemovingFromFavorites ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <Heart className={`h-5 w-5 ${isFavorite ? 'fill-current' : ''}`} />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {isFavorite ? "Видалити з улюблених" : "Додати до улюблених"}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+        
+        {!imageOnly && <CardContent className="p-3">
+          <h3 className="font-bold text-sm line-clamp-2">{castActor.name}</h3>
+          <p className="text-xs text-muted-foreground">{castActor.character}</p>
+        </CardContent>}
+      </Card>
+    );
+  }
+
   // Компактний варіант для представлення в сітці
   if (variant === 'compact') {
     return (
       <Card 
-        className="overflow-hidden hover:shadow-md transition-shadow duration-200 cursor-pointer"
+        className="overflow-hidden hover:shadow-md transition-shadow duration-200 cursor-pointer p-0 gap-0"
         onClick={handleCardClick}
       >
         <div className="relative aspect-[2/3] w-full bg-slate-800">
@@ -139,7 +209,7 @@ export function ActorCard({ actor, variant = 'default' }: ActorCardProps) {
   // Повний варіант картки для результатів пошуку
   return (
     <Card 
-      className="overflow-hidden hover:shadow-md transition-shadow duration-200 cursor-pointer flex flex-col p-0"
+      className="overflow-hidden hover:shadow-md transition-shadow duration-200 cursor-pointer flex flex-col p-0 gap-0"
       onClick={handleCardClick}
     >
       <div className="relative aspect-[2/3] w-full bg-slate-800">

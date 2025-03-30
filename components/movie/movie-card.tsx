@@ -129,7 +129,7 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
   // Компактний варіант картки для списку фільмів актора
   if (variant === 'compact') {
     return (
-      <Card className="overflow-hidden hover:shadow-md transition-shadow duration-200 p-0 h-full">
+      <Card className="overflow-hidden hover:shadow-md transition-shadow duration-200 p-0 h-full gap-0">
         <div className="relative aspect-[2/3] w-full bg-slate-800">
           {/* Лоадер під час завантаження зображення */}
           {isImageLoading && (
@@ -139,7 +139,7 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
           )}
 
           {/* Fallback коли зображення не завантажилось */}
-          {imageLoadError && !isImageLoading && (
+          {imageLoadError && !isImageLoading ? (
             <div 
               className="absolute inset-0 flex items-center justify-center transition-opacity duration-300"
               style={{ backgroundColor: getPosterBackground() }}
@@ -151,9 +151,8 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
                 </p>
               </div>
             </div>
-          )}
-
-          <Image
+          ) : (
+            <Image
             src={
               !movie.poster_path 
                 ? '/placeholder-poster.png' 
@@ -166,6 +165,7 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
             onError={handleImageError}
             onLoad={handleImageLoad}
           />
+          )}
 
           {voteAverage > 0 && (
             <div className="absolute top-2 left-2 bg-black/75 text-white px-2 py-1 rounded-md text-xs font-semibold flex items-center gap-1 z-10">
@@ -227,23 +227,25 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
           )}
         </div>
         <CardContent className="p-3">
-          <h3 className="font-bold text-sm line-clamp-2 cursor-pointer" onClick={handleOpenDetails}>
+          <h3 className="font-bold text-sm line-clamp-2 cursor-pointer mb-2" onClick={handleOpenDetails}>
             {getTitle()} {movieWatched && <Eye className="inline h-3 w-3 ml-1 text-blue-500" />}
-            {selectedTranslation && (
-              <LanguageIndicator 
+          </h3>
+          <div className='flex items-center'>
+          {selectedTranslation && (
+              <LanguageIndicator
                 selectedTranslation={selectedTranslation} 
                 onClick={(e) => {
                   e.stopPropagation(); // Запобігаємо відкриттю деталей фільму
                   openLanguageSelector();
                 }}
                 size="sm"
-                className="ml-1 inline-flex"
+                className="mr-2 inline-flex"
               />
             )}
-          </h3>
           <p className="text-xs text-muted-foreground">
             {movie.release_date ? format(new Date(movie.release_date), 'yyyy') : 'Невідома дата'}
           </p>
+          </div>
         </CardContent>
       </Card>
     );
