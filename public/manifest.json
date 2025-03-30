@@ -9,12 +9,7 @@
     "icons": [
       {
         "src": "/Screenshot_3.png",
-        "sizes": "192x192",
-        "type": "image/png"
-      },
-      {
-        "src": "/Screenshot_3.png",
-        "sizes": "512x512",
+        "sizes": "65x65",
         "type": "image/png"
       }
     ]
