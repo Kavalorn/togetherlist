@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Star, Info, Bookmark, BookmarkCheck, Eye, EyeOff, Loader2, Film } from 'lucide-react';
+import { Star, Info, Eye, EyeOff, Loader2, Film } from 'lucide-react';
 import { Movie } from '@/lib/tmdb';
 import { useWatchedMovies } from '@/hooks/use-watched-movies';
 import { useUIStore } from '@/store/ui-store';
@@ -14,7 +14,6 @@ import { format } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import { MovieTrailer } from './movie-trailer';
-import { useMovieTrailer } from '@/hooks/use-movie-trailer';
 import { useMovieTranslations } from '@/hooks/use-movie-translations';
 import { LanguageSelector } from './language-selector';
 import { WatchlistSelector } from '@/components/watchlist/watchlist-selector';
@@ -304,7 +303,7 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
             <TooltipTrigger asChild>
             <WatchlistSelector 
               movie={movie} 
-              variant="ghost" 
+              variant="secondary" 
               size="icon" 
               className="absolute top-2 right-2 z-10" 
               iconOnly={true} 
@@ -357,6 +356,9 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
             onClick={handleOpenDetails}
           >
             {getTitle()} {movieWatched && <Eye className="inline h-4 w-4 ml-1 text-blue-500" />}
+          </h2>
+          <p className="text-xs sm:text-sm text-muted-foreground mb-2">
+            {movie.release_date ? format(new Date(movie.release_date), 'dd MMM yyyy') : 'Невідома дата'}
             {selectedTranslation && (
               <LanguageIndicator 
                 selectedTranslation={selectedTranslation} 
@@ -367,10 +369,7 @@ export function MovieCard({ movie, variant = 'default' }: MovieCardProps) {
                 size="sm"
                 className="ml-2 inline-flex"
               />
-            )}
-          </h2>
-          <p className="text-xs sm:text-sm text-muted-foreground mb-2">
-            {movie.release_date ? format(new Date(movie.release_date), 'dd MMM yyyy') : 'Невідома дата'}
+          )}
           </p>
           <p className="text-xs sm:text-sm line-clamp-3 mb-3">
             {getDescription()}

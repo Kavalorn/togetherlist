@@ -267,30 +267,6 @@ const updateMovieInWatchlist = async (
   return result;
 };
 
-// Функція для міграції фільмів зі старого списку
-const migrateWatchlist = async (token: string | null = null) => {
-  if (!token) throw new Error('Not authenticated');
-  
-  console.log('Початок міграції списку');
-  
-  const response = await fetch(`/api/migrate-watchlist`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`
-    }
-  });
-  
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error(`Помилка міграції списку: ${errorText}`);
-    throw new Error('Failed to migrate watchlist');
-  }
-  
-  const result = await response.json();
-  console.log(`Міграцію завершено, перенесено ${result.stats?.migratedMovies || 0} фільмів`);
-  return result;
-};
-
 // Хук для роботи зі списками перегляду
 export function useWatchlists() {
   const queryClient = useQueryClient();
@@ -338,14 +314,6 @@ export function useWatchlists() {
     },
   });
   
-  // Мутація для міграції фільмів
-  const migrateMutation = useMutation({
-    mutationFn: () => migrateWatchlist(token),
-    onSuccess: () => {
-      // Інвалідація кешу після успішної міграції
-      queryClient.invalidateQueries({ queryKey: ['watchlists'] });
-    },
-  });
   
   // Функція для перевірки, чи існує список за замовчуванням
   const hasDefaultWatchlist = (): boolean => {
@@ -368,12 +336,10 @@ export function useWatchlists() {
     createWatchlist: createMutation.mutate,
     updateWatchlist: updateMutation.mutate,
     deleteWatchlist: deleteMutation.mutate,
-    migrateWatchlist: migrateMutation.mutate,
     
     isCreating: createMutation.isPending,
     isUpdating: updateMutation.isPending,
     isDeleting: deleteMutation.isPending,
-    isMigrating: migrateMutation.isPending,
     
     hasDefaultWatchlist,
     getDefaultWatchlist,

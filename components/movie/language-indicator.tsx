@@ -1,7 +1,7 @@
 // Файл: components/movie/language-indicator.tsx
 'use client';
 
-import { Globe } from 'lucide-react';
+import { Globe, Loader2 } from 'lucide-react';
 import { MovieTranslation } from '@/lib/tmdb';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -52,8 +52,16 @@ export function LanguageIndicator({
       className={`flex items-center gap-1 cursor-pointer bg-muted/30 hover:bg-muted ${sizeClasses[size]} ${className}`}
       onClick={handleClick}
     >
-      <Globe className={iconSizes[size]} />
-      <span>{selectedTranslation.iso_639_1.toUpperCase()}</span>
+      {
+      !selectedTranslation 
+      ? <Loader2 />
+      : (
+        <>
+          <Globe className={iconSizes[size]} />
+          <span>{selectedTranslation.iso_639_1.toUpperCase()}</span>
+        </>
+      )
+      }
     </Badge>
   );
   

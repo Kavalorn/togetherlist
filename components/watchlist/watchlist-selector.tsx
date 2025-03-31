@@ -39,8 +39,7 @@ export function WatchlistSelector({
   className,
   iconOnly = false
 }: WatchlistSelectorProps) {
-  const { watchlists, isLoading, createWatchlist, isCreating } = useWatchlists();
-  const [selectedWatchlistId, setSelectedWatchlistId] = useState<number | null>(null);
+  const { watchlists, isLoading, createWatchlist, isCreating, isUpdating, isDeleting } = useWatchlists();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newWatchlistName, setNewWatchlistName] = useState('');
   const [newWatchlistDescription, setNewWatchlistDescription] = useState('');
@@ -155,7 +154,7 @@ export function WatchlistSelector({
     }
   };
   
-  if (isLoading) {
+  if (isLoading || isCreating || isUpdating || isDeleting) {
     return (
       <Button
         variant={variant}
@@ -176,7 +175,7 @@ export function WatchlistSelector({
           <Button
             variant={isInAnyWatchlist ? "default" : variant}
             size={size}
-            className={cn(
+            className={cn("transition-colors cursor-pointer",
               isInAnyWatchlist ? "bg-yellow-600 hover:bg-yellow-700" : "",
               className
             )}
