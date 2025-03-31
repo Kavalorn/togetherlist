@@ -1,0 +1,5 @@
+{
+    "rest-client.previewOption": "exchange",
+    "rest-client.showRequestLengthInStatusBar": true,
+    "rest-client.logLevel": "verbose"
+}

@@ -1,0 +1,164 @@
+###
+# Запити до TMDB API для отримання даних про фільми
+###
+@baseUrl = https://api.themoviedb.org/3
+@apiKey = Bearer {{$dotenv NEXT_PUBLIC_TMDB_API_KEY}}
+
+@language = uk-UA
+
+### Отримання популярних фільмів (пагінація)
+GET {{baseUrl}}/movie/popular?&language={{language}}&page=1
+Accept: application/json
+Authorization: {{apiKey}}
+
+### Отримання деталей конкретного фільму
+GET {{baseUrl}}/movie/550?&language={{language}}
+Accept: application/json
+Authorization: {{apiKey}}
+
+### Пошук фільмів
+GET {{baseUrl}}/search/movie?&language={{language}}&query=matrix&page=1&include_adult=false
+Accept: application/json
+Authorization: {{apiKey}}
+
+### Отримання акторського складу фільму
+GET {{baseUrl}}/movie/550/credits?&language={{language}}
+Accept: application/json
+Authorization: {{apiKey}}
+
+### Отримання рекомендованих фільмів
+GET {{baseUrl}}/movie/550/recommendations?&language={{language}}&page=1
+Accept: application/json
+Authorization: {{apiKey}}
+
+### Отримання подібних фільмів
+GET {{baseUrl}}/movie/550/similar?&language={{language}}&page=1
+Accept: application/json
+Authorization: {{apiKey}}
+
+### Отримання відео до фільму (трейлери, тизери)
+GET {{baseUrl}}/movie/550/videos?&language={{language}}
+Accept: application/json
+Authorization: {{apiKey}}
+
+### Отримання зображень фільму
+GET {{baseUrl}}/movie/550/images?&language={{language}}
+Accept: application/json
+Authorization: {{apiKey}}
+
+### Отримання перекладів фільму
+GET {{baseUrl}}/movie/550/translations?
+Accept: application/json
+Authorization: {{apiKey}}
+
+### Отримання фільмів за жанром (жанр: action, id=28)
+GET {{baseUrl}}/discover/movie?&language={{language}}&with_genres=28&page=1
+Accept: application/json
+Authorization: {{apiKey}}
+
+### Отримання списку жанрів фільмів
+GET {{baseUrl}}/genre/movie/list?&language={{language}}
+Accept: application/json
+Authorization: {{apiKey}}
+
+### Отримання даних про провайдерів стрімінгу фільму
+GET {{baseUrl}}/movie/550/watch/providers?
+Accept: application/json
+Authorization: {{apiKey}}
+
+### Отримання найновіших фільмів у прокаті
+GET {{baseUrl}}/movie/now_playing?&language={{language}}&page=1
+Accept: application/json
+Authorization: {{apiKey}}
+
+### Отримання майбутніх фільмів
+GET {{baseUrl}}/movie/upcoming?&language={{language}}&page=1
+Accept: application/json
+Authorization: {{apiKey}}
+
+### Приклад відповіді для популярних фільмів
+# {
+#   "page": 1,
+#   "results": [
+#     {
+#       "adult": false,
+#       "backdrop_path": "/path/to/backdrop.jpg",
+#       "genre_ids": [28, 12, 878],
+#       "id": 123456,
+#       "original_language": "en",
+#       "original_title": "Movie Title",
+#       "overview": "Description of the movie...",
+#       "popularity": 123.456,
+#       "poster_path": "/path/to/poster.jpg",
+#       "release_date": "2023-01-01",
+#       "title": "Назва фільму",
+#       "video": false,
+#       "vote_average": 7.5,
+#       "vote_count": 1234
+#     },
+#     // Більше фільмів...
+#   ],
+#   "total_pages": 123,
+#   "total_results": 24567
+# }
+
+### Приклад відповіді для деталей фільму
+# {
+#   "adult": false,
+#   "backdrop_path": "/path/to/backdrop.jpg",
+#   "belongs_to_collection": {
+#     "id": 12345,
+#     "name": "Collection Name",
+#     "poster_path": "/path/to/collection/poster.jpg",
+#     "backdrop_path": "/path/to/collection/backdrop.jpg"
+#   },
+#   "budget": 150000000,
+#   "genres": [
+#     {
+#       "id": 28,
+#       "name": "Бойовик"
+#     },
+#     {
+#       "id": 878,
+#       "name": "Наукова фантастика"
+#     }
+#   ],
+#   "homepage": "https://example.com",
+#   "id": 123456,
+#   "imdb_id": "tt1234567",
+#   "original_language": "en",
+#   "original_title": "Movie Title",
+#   "overview": "Detailed description of the movie...",
+#   "popularity": 123.456,
+#   "poster_path": "/path/to/poster.jpg",
+#   "production_companies": [
+#     {
+#       "id": 7890,
+#       "logo_path": "/path/to/logo.png",
+#       "name": "Company Name",
+#       "origin_country": "US"
+#     }
+#   ],
+#   "production_countries": [
+#     {
+#       "iso_3166_1": "US",
+#       "name": "United States of America"
+#     }
+#   ],
+#   "release_date": "2023-01-01",
+#   "revenue": 500000000,
+#   "runtime": 120,
+#   "spoken_languages": [
+#     {
+#       "english_name": "English",
+#       "iso_639_1": "en",
+#       "name": "English"
+#     }
+#   ],
+#   "status": "Released",
+#   "tagline": "Movie tagline",
+#   "title": "Назва фільму",
+#   "video": false,
+#   "vote_average": 7.5,
+#   "vote_count": 1234
+# }

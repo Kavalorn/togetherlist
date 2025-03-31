@@ -1,0 +1,266 @@
+###
+# Запити до TMDB API для отримання даних про серіали
+###
+
+@baseUrl = https://api.themoviedb.org/3
+@apiKey = Bearer {{$dotenv NEXT_PUBLIC_TMDB_API_KEY}}
+
+@language = uk-UA
+
+### Отримання популярних серіалів (пагінація)
+GET {{baseUrl}}/tv/popular?&language={{language}}&page=1
+Accept: application/json
+Authorization: {{apiKey}}
+
+### Отримання деталей конкретного серіалу (приклад: Stranger Things, ID=66732)
+GET {{baseUrl}}/tv/66732?&language={{language}}
+Accept: application/json
+Authorization: {{apiKey}}
+
+### Пошук серіалів
+GET {{baseUrl}}/search/tv?&language={{language}}&query=stranger&page=1&include_adult=false
+Accept: application/json
+Authorization: {{apiKey}}
+
+### Отримання акторського складу серіалу
+GET {{baseUrl}}/tv/66732/credits?&language={{language}}
+Accept: application/json
+Authorization: {{apiKey}}
+
+### Отримання списку сезонів
+GET {{baseUrl}}/tv/66732/season/1?&language={{language}}
+Accept: application/json
+Authorization: {{apiKey}}
+
+### Отримання деталей конкретного епізоду
+GET {{baseUrl}}/tv/66732/season/1/episode/1?&language={{language}}
+Accept: application/json
+Authorization: {{apiKey}}
+
+### Отримання рекомендованих серіалів
+GET {{baseUrl}}/tv/66732/recommendations?&language={{language}}&page=1
+Accept: application/json
+Authorization: {{apiKey}}
+
+### Отримання подібних серіалів
+GET {{baseUrl}}/tv/66732/similar?&language={{language}}&page=1
+Accept: application/json
+Authorization: {{apiKey}}
+
+### Отримання відео до серіалу (трейлери, тизери)
+GET {{baseUrl}}/tv/66732/videos?&language={{language}}
+Accept: application/json
+Authorization: {{apiKey}}
+
+### Отримання зображень серіалу
+GET {{baseUrl}}/tv/66732/images?&language={{language}}
+Accept: application/json
+Authorization: {{apiKey}}
+
+### Отримання перекладів серіалу
+GET {{baseUrl}}/tv/66732/translations?
+Accept: application/json
+Authorization: {{apiKey}}
+
+### Отримання серіалів за жанром (жанр: драма, id=18)
+GET {{baseUrl}}/discover/tv?&language={{language}}&with_genres=18&page=1
+Accept: application/json
+Authorization: {{apiKey}}
+
+### Отримання списку жанрів серіалів
+GET {{baseUrl}}/genre/tv/list?&language={{language}}
+Accept: application/json
+Authorization: {{apiKey}}
+
+### Отримання даних про провайдерів стрімінгу серіалу
+GET {{baseUrl}}/tv/66732/watch/providers?
+Accept: application/json
+Authorization: {{apiKey}}
+
+### Отримання серіалів, які зараз виходять в ефір
+GET {{baseUrl}}/tv/on_the_air?&language={{language}}&page=1
+Accept: application/json
+Authorization: {{apiKey}}
+
+### Отримання серіалів, які виходять сьогодні
+GET {{baseUrl}}/tv/airing_today?&language={{language}}&page=1
+Accept: application/json
+Authorization: {{apiKey}}
+
+### Отримання топ рейтингових серіалів
+GET {{baseUrl}}/tv/top_rated?&language={{language}}&page=1
+Accept: application/json
+Authorization: {{apiKey}}
+
+### Приклад відповіді для популярних серіалів
+# {
+#   "page": 1,
+#   "results": [
+#     {
+#       "backdrop_path": "/path/to/backdrop.jpg",
+#       "first_air_date": "2016-07-15",
+#       "genre_ids": [18, 9648],
+#       "id": 66732,
+#       "name": "Дивні Дива",
+#       "origin_country": ["US"],
+#       "original_language": "en",
+#       "original_name": "Stranger Things",
+#       "overview": "Опис серіалу...",
+#       "popularity": 123.456,
+#       "poster_path": "/path/to/poster.jpg",
+#       "vote_average": 8.5,
+#       "vote_count": 12345
+#     },
+#     // Більше серіалів...
+#   ],
+#   "total_pages": 123,
+#   "total_results": 24567
+# }
+
+### Приклад відповіді для деталей серіалу
+# {
+#   "backdrop_path": "/path/to/backdrop.jpg",
+#   "created_by": [
+#     {
+#       "id": 12345,
+#       "credit_id": "credit_id_here",
+#       "name": "Creator Name",
+#       "gender": 2,
+#       "profile_path": "/path/to/profile.jpg"
+#     }
+#   ],
+#   "episode_run_time": [50],
+#   "first_air_date": "2016-07-15",
+#   "genres": [
+#     {
+#       "id": 18,
+#       "name": "Драма"
+#     },
+#     {
+#       "id": 9648,
+#       "name": "Містика"
+#     }
+#   ],
+#   "homepage": "https://example.com",
+#   "id": 66732,
+#   "in_production": true,
+#   "languages": ["en"],
+#   "last_air_date": "2023-07-01",
+#   "last_episode_to_air": {
+#     "air_date": "2023-07-01",
+#     "episode_number": 9,
+#     "id": 123456,
+#     "name": "Episode Name",
+#     "overview": "Episode description...",
+#     "production_code": "",
+#     "runtime": 50,
+#     "season_number": 4,
+#     "show_id": 66732,
+#     "still_path": "/path/to/still.jpg",
+#     "vote_average": 8.7,
+#     "vote_count": 1234
+#   },
+#   "name": "Дивні Дива",
+#   "networks": [
+#     {
+#       "id": 213,
+#       "name": "Netflix",
+#       "logo_path": "/path/to/logo.png",
+#       "origin_country": "US"
+#     }
+#   ],
+#   "next_episode_to_air": null,
+#   "number_of_episodes": 34,
+#   "number_of_seasons": 4,
+#   "origin_country": ["US"],
+#   "original_language": "en",
+#   "original_name": "Stranger Things",
+#   "overview": "Detailed description of the show...",
+#   "popularity": 123.456,
+#   "poster_path": "/path/to/poster.jpg",
+#   "production_companies": [
+#     {
+#       "id": 7890,
+#       "logo_path": "/path/to/logo.png",
+#       "name": "Company Name",
+#       "origin_country": "US"
+#     }
+#   ],
+#   "production_countries": [
+#     {
+#       "iso_3166_1": "US",
+#       "name": "United States of America"
+#     }
+#   ],
+#   "seasons": [
+#     {
+#       "air_date": "2016-07-15",
+#       "episode_count": 8,
+#       "id": 123456,
+#       "name": "Season 1",
+#       "overview": "Season overview...",
+#       "poster_path": "/path/to/season_poster.jpg",
+#       "season_number": 1
+#     },
+#     // Більше сезонів...
+#   ],
+#   "spoken_languages": [
+#     {
+#       "english_name": "English",
+#       "iso_639_1": "en",
+#       "name": "English"
+#     }
+#   ],
+#   "status": "Returning Series",
+#   "tagline": "Show tagline",
+#   "type": "Scripted",
+#   "vote_average": 8.5,
+#   "vote_count": 12345
+# }
+
+### Приклад відповіді для деталей сезону
+# {
+#   "_id": "season_id_here",
+#   "air_date": "2016-07-15",
+#   "episodes": [
+#     {
+#       "air_date": "2016-07-15",
+#       "crew": [
+#         {
+#           "id": 12345,
+#           "credit_id": "credit_id_here",
+#           "name": "Director Name",
+#           "department": "Directing",
+#           "job": "Director",
+#           "profile_path": "/path/to/profile.jpg"
+#         }
+#       ],
+#       "episode_number": 1,
+#       "guest_stars": [
+#         {
+#           "id": 67890,
+#           "name": "Guest Star Name",
+#           "credit_id": "credit_id_here",
+#           "character": "Character Name",
+#           "order": 1,
+#           "profile_path": "/path/to/profile.jpg"
+#         }
+#       ],
+#       "id": 123456,
+#       "name": "Chapter One: The Vanishing of Will Byers",
+#       "overview": "Episode description...",
+#       "production_code": "",
+#       "runtime": 50,
+#       "season_number": 1,
+#       "still_path": "/path/to/still.jpg",
+#       "vote_average": 8.5,
+#       "vote_count": 1234
+#     },
+#     // Більше епізодів...
+#   ],
+#   "name": "Season 1",
+#   "overview": "Season overview...",
+#   "id": 123456,
+#   "poster_path": "/path/to/season_poster.jpg",
+#   "season_number": 1
+# }
