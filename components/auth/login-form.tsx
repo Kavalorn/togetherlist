@@ -88,6 +88,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
       <Button 
         type="submit" 
         className="w-full" 
+        data-testid="login-button"
         disabled={isLoading}
       >
         {isLoading ? (
